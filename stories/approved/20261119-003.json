@@ -1,0 +1,19 @@
+{
+  "id": "20261119-003",
+  "title": "柱の線",
+  "hook": "柱の線は、未来まで続いていた",
+  "body": "実家を取り壊す前の日、僕は台所の柱を見に行った。子どものころ、誕生日ごとに背を測り、鉛筆で線を引いた柱だ。母が「また伸びたね」と笑う声を、今でも覚えている。\n線は十八歳で終わっている。そのはずだった。ところが柱の反対側にも、低い位置から線が並んでいた。一歳、二歳、三歳。横の日付は、どれも来年より先だった。いったい、誰のいたずらだろう。\n線の横には、子どもの名前が書かれていた。その字は、どう見ても僕の字だった。少し右に傾く、昔からのくせまで同じだ。そしてその名前は、ゆうべ妻と二人で、おなかの子のために決めたばかりのものだった。",
+  "image_prompts": [
+    "an old empty japanese house kitchen with a wooden pillar, soft light",
+    "pencil height marks on an old wooden pillar, close-up",
+    "a young couple's hands on a pregnant belly, warm light"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "不思議な話"
+  ],
+  "approved": true,
+  "notes": "2026-11-19 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: old wooden house interior / wooden pillar / pregnant belly hands",
+  "voice": "ofutonp"
+}

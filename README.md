@@ -1,0 +1,119 @@
+# ai-shorts
+
+AIで書いたショートショートを音声合成（COEIROINK / AivisSpeech）で朗読し、縦型ショート動画（YouTube Shorts / Instagram Reels）にするローカル制作パイプライン。
+
+- **すべてローカル・無料**（有料APIは使わない）
+- **自動化するのは mp4 ができるまで**。投稿は手動（YouTube Studio の予約投稿）
+- **主な収益源は BGM**：自作BGMを TuneCore Japan 経由で YouTube Content ID に登録し、動画での使用分を得る。ショート動画そのものの広告収益は狙わない
+
+方針の詳細は [docs/policy.md](docs/policy.md)、各工程の仕様は [docs/pipeline.md](docs/pipeline.md) を参照。
+**作業の手順（環境づくり・1本作る流れ・声・読みの直し方・つまずきやすいところ）は [docs/runbook.md](docs/runbook.md)。**
+Claude Code では `.claude/skills/` のスキル（`make-shorts` ほか）がこの手順を実行する。
+
+## scripts/
+
+| スクリプト | 用途 |
+|---|---|
+| `check_story.py` | 物語の検査（字数・文の長さ・hook・声）。`--readings` で読みも出す |
+| `approve_story.py` | 人が承認した物語を draft → approved に移す |
+| `preview_backgrounds.py` | 背景の候補シート（Openverse CC0/PDM、ID つき） |
+| `fetch_stock_images.py` | 背景を取って `work/{id}/img_N.png` に置く（`--query "id:..."`） |
+| `preview_video.py` | 完成動画の確認用コマ画像 |
+| `tts_status.py` | エンジンが動いているか・声が入っているか |
+| `voice_samples.py` | 声の聞き比べ用サンプル |
+| `setup_tools.py` | エンジンと声を `tools/` に入れる |
+| `start_tts.ps1` | COEIROINK と AivisSpeech を起動する |
+
+## 処理の流れ
+
+```
+stories/draft/*.json      ← Claude Code セッションで物語を生成
+      │  人が選んで直す（approved: true にして approved/ へ移動）
+stories/approved/*.json
+      │  tts → images → subs → render → qa
+work/{id}/                ← 1本ごとの中間ファイル
+      │  QA合格
+ready/{id}.mp4            ← 手動で投稿
+```
+
+## 必要なもの
+
+| 種類 | ツール | 備考 |
+|---|---|---|
+| 音声合成 | COEIROINK（50032）・AivisSpeech Engine（10101） | 声ごとに利用規約とクレジット表記を確認（下の「音声合成エンジン」） |
+| 画像生成 | ComfyUI（localhost:8188） | RTX 3060 Ti（8GB）。商用利用できるモデルのみ使う |
+| 合成 | ffmpeg | 字幕を焼き込むため libass つきのビルド |
+| フォント | Noto Serif JP など（OFL） | `assets/fonts/` に置く |
+| BGM | 自作の WAV | `assets/bgm/`。ルールは [docs/bgm.md](docs/bgm.md) |
+| Python | 3.11 以上 | `pip install -r requirements.txt` |
+
+## セットアップ
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate               # macOS / Linux は source .venv/bin/activate
+pip install -e ".[dev]"              # src/ai_shorts をパッケージとして入れる（pytest つき）
+cp config.example.yaml config.yaml   # 声・BGM・フォントなどを設定
+pytest                               # 単体テスト（音声合成エンジン・ffmpeg なしで動く）
+```
+
+### 音声合成エンジン
+
+アプリはインストールせず、エンジンだけを `tools/`（git 管理外）に置く。CPU 版にしているのは、GPU の VRAM を ComfyUI に残すため。
+
+| エンジン | 置き場所 | 入手先 | 備考 |
+|---|---|---|---|
+| COEIROINK v2.13.0（CPU） | `tools/coeiroink/` | [公式サイト](https://coeiroink.com/download) の Windows CPU 版 zip。中の `.7z.001` を `tar -xf` で展開（同梱の .exe は使わない） | 声は `tools/coeiroink/speaker_info/` に置く。公式キャラはエンジンの `/v1/download_info` の URL から zip を落として展開する。**エンジンは起動時に読んだ声しか使えないので、声を足したら再起動** |
+| AivisSpeech Engine 1.2.0 | `tools/aivisspeech_engine/` | [GitHub Releases](https://github.com/Aivis-Project/AivisSpeech-Engine/releases) の `.7z.001` を `tar -xf` で展開 | 声のモデルと BERT モデル（約 650MB）は `%APPDATA%\AivisSpeech-Engine` に入る。モデルは AivisHub から `/aivm_models/install` で入れる。**`--disable_sentry` で起動する**（エラー情報を外部に送らない） |
+| VOICEVOX ENGINE 0.26.2（CPU） | `tools/voicevox_engine/` | GitHub の `.vvpp`（ZIP） | いまは使っていない（D-011）。`%LOCALAPPDATA%\voicevox-engine` に設定を作る |
+
+- 起動：`powershell -ExecutionPolicy Bypass -File scripts\start_tts.ps1`（COEIROINK と AivisSpeech を別ウィンドウで起動）
+- 完全に消すときは、`tools/` に加えて上の `%APPDATA%` / `%LOCALAPPDATA%` のフォルダも消す。
+- 使う声は `config.yaml` の `voices` に登録し、物語 JSON の `"voice"` で選ぶ（なければ `tts.default_voice`）。`credit` は規約どおりの表記にする（説明文と画面に出る）。
+- 読みやアクセントの修正は `assets/tts/user_dict.yaml` に書く。tts のたびに、使うエンジンへ反映される（COEIROINK にも同じ内容が入る）。
+
+## 使い方
+
+```bash
+# 背景画像（ComfyUI ができるまでの仮）：段落ごとに検索語を1つ。CC0 / パブリックドメインだけを使う
+python scripts/fetch_stock_images.py --id <story_id> --query "..." --query "..." --query "..."
+
+python -m ai_shorts tts     --id <story_id>   # 声 → work/{id}/voice.wav, timing.json
+python -m ai_shorts subs    --id <story_id>   # 字幕 → subs.ass, subs.json
+python -m ai_shorts render  --id <story_id>   # 合成 → video.mp4
+python -m ai_shorts qa      --id <story_id>   # 検査 → 合格なら ready/{id}.mp4 と ready/{id}.txt（説明文）
+python -m ai_shorts all     --id <story_id>   # 上の4つを順に実行
+python -m ai_shorts all     --approved        # 承認済みの物語をまとめて処理
+```
+
+- 背景は `work/{id}/img_1.png 〜 img_N.png`。段落の数と同じなら段落の境目で切り替え、なければ単色。出典とライセンスは `work/{id}/images.json`。
+- 気に入らない画像は `--skip` で差し替える（段落ごとに、上位から何枚飛ばすか）。
+- images（ComfyUI）はまだない。
+
+## フォルダ構成
+
+```
+ai-shorts/
+├── CLAUDE.md              Claude Code 向けの指示
+├── README.md
+├── config.example.yaml
+├── requirements.txt
+├── docs/
+│   ├── policy.md          収益化・権利・プラットフォーム規約の方針
+│   ├── pipeline.md        工程ごとの仕様
+│   ├── bgm.md             BGM制作と TuneCore 申請のルール
+│   ├── story-guidelines.md 物語の書き方と人が確認する点
+│   └── decisions.md       決定事項の記録
+├── stories/
+│   ├── draft/             生成直後（未確認）
+│   └── approved/          人が確認済み
+├── work/{id}/             中間ファイル（git 管理外）
+├── ready/                 完成した mp4（git 管理外）
+├── assets/
+│   ├── bgm/               自作BGM
+│   ├── fonts/
+│   └── styles/            画像生成用のスタイル指定
+├── src/ai_shorts/         パイプラインのコード
+├── scripts/               単発のツール
+└── tests/
+```

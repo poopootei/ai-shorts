@@ -1,0 +1,128 @@
+# 運用手順書（runbook）
+
+動画を作るときの手順を、毎回同じ結果になるようにまとめたもの。
+方針は [policy.md](policy.md)、工程の仕様は [pipeline.md](pipeline.md)、決定の経緯は [decisions.md](decisions.md)。
+Claude Code で作業するときは、`.claude/skills/` のスキル（下の表）がこの手順を実行する。
+
+| やること | スキル | この文書の節 |
+|---|---|---|
+| 動画を作る（全体の流れ） | `make-shorts` | 3 |
+| 物語を書く・承認する | `write-stories` | 3-1〜3-2 |
+| 背景画像を選ぶ | `pick-backgrounds` | 3-3 |
+| 読み間違いを直す | `fix-readings` | 5 |
+| 声を選ぶ・足す | `manage-voices` | 4 |
+| 環境を作る・作り直す | `setup-environment` | 1 |
+
+作業のルートは `D:\prj\ai-shorts`。コマンドはすべてここで実行する。Python は `.venv\Scripts\python`。
+
+---
+
+## 1. 環境を作る（新しい PC・作り直し）
+
+ダウンロードは合計で数 GB になる。**実行する前に、何をどこから・何 MB 落とすかを伝えて了承を得る。**
+
+| 手順 | コマンド | 大きさ |
+|---|---|---|
+| Python の環境 | `python -m venv .venv` → `.venv\Scripts\python -m pip install -e ".[dev]"` | 数十 MB |
+| 設定 | `copy config.example.yaml config.yaml` | – |
+| ffmpeg | `winget install Gyan.FFmpeg`（libass・drawtext つきの full build） | 約 200MB |
+| COEIROINK | `.venv\Scripts\python scripts\setup_tools.py coeiroink` | 約 592MB（展開後 1.4GB） |
+| AivisSpeech | `.venv\Scripts\python scripts\setup_tools.py aivisspeech` | 約 217MB（＋初回起動時に約 900MB） |
+| エンジン起動 | `powershell -ExecutionPolicy Bypass -File scripts\start_tts.ps1` | – |
+| 声：おふとんP | `.venv\Scripts\python scripts\setup_tools.py coeiroink-voice a60ebf6c-626a-7ce6-5d69-c92bf2a1a1d0` → COEIROINK を再起動 | 1.39GB |
+| 声：阿井田 茂 | `.venv\Scripts\python scripts\setup_tools.py aivis-model 47e53151-a378-46f3-abee-ce13aa07feb1` | 約 250MB |
+| 確認 | `.venv\Scripts\python scripts\tts_status.py` → 全部 OK | – |
+| テスト | `.venv\Scripts\python -m pytest` | – |
+
+- フォント（Noto Serif JP Medium、OFL）は `assets/fonts/` に入っている（git 管理）。
+- つくよみちゃんは COEIROINK に同梱。
+- エンジンのデータは `tools/` のほか、`%APPDATA%\AivisSpeech-Engine`（モデルと BERT、約 1.6GB）にもできる。完全に消すときはそこも消す。
+- VOICEVOX（`tools/voicevox_engine/`）はいまは使っていない（D-011）。
+
+## 2. 作業を始めるとき
+
+1. エンジンを起動する：`powershell -ExecutionPolicy Bypass -File scripts\start_tts.ps1`
+   - Claude Code から起動するときは、バックグラウンドで `tools/coeiroink/engine/engine.exe`（作業フォルダは `tools/coeiroink/engine`）と `tools/aivisspeech_engine/run.exe --host 127.0.0.1 --port 10101 --disable_sentry` を動かす。**セッションが終わると止まる**ので、次の作業のときは起動し直す。
+2. 状態を確かめる：`.venv\Scripts\python scripts\tts_status.py`（止まっている・声がないものは NG）
+
+## 3. 1本（または数本）作る流れ
+
+### 3-1. 物語を書く（Claude Code セッション内）
+- [story-guidelines.md](story-guidelines.md) に沿って書き、`stories/draft/{YYYYMMDD-NNN}.json` に保存する。id は作った日付＋連番。
+- `"voice"` に雰囲気に合う声の候補を入れる（`config.yaml` の `voices`）。
+- `image_prompts` は段落の数だけ（英語）。`notes` に背景の検索語の候補を書いておくと次が楽。
+- 検査：`.venv\Scripts\python scripts\check_story.py stories\draft\<id>.json --readings`
+  - NG を直す。読み間違いは 5 の手順で辞書に足す（辞書で直らないものは文を書き換える）。
+
+### 3-2. 承認（人）
+- 下書きの全文をユーザーに見せて、承認をもらう。**Claude が自分で承認しない**（CLAUDE.md の決まり 6）。
+- 承認されたら：`.venv\Scripts\python scripts\approve_story.py <id> --note "直した点"`（直していなければ `--note` は省略）
+  - 検査に NG があると承認されず draft に残る。
+
+### 3-3. 背景画像（ComfyUI ができるまでの仮。D-008）
+1. 候補を並べる：`.venv\Scripts\python scripts\preview_backgrounds.py --name <id> "検索語1" "検索語2" "検索語3"`
+   - `work/_previews/<id>_sheet.png` を見て、段落ごとに1枚選ぶ。端末に出る ID を控える。
+   - 合うものがなければ検索語を変える。英語の短い語（2〜3語）が当たりやすい。縦長で雰囲気の合う CC0 は少ない。
+   - 広告・ブランドロゴ・実在の人物が目立つもの、絵柄が浮くもの（古い図版など）は避ける。
+2. ID で取る：`.venv\Scripts\python scripts\fetch_stock_images.py --id <id> --query "id:<ID1>" --query "id:<ID2>" --query "id:<ID3>"`
+   - 出典とライセンスは `work/<id>/images.json` に残る。
+
+### 3-4. 合成
+- `.venv\Scripts\python -m ai_shorts all --id <id>`（tts → subs → render → qa）
+  - 一部だけやり直すとき：`subs` / `render` / `qa` を個別に。字幕や画像を変えただけなら tts は不要。
+  - 「上限を超えています」で止まったら本文を短くする（話速は `speed_max` まで自動で上がる）。
+
+### 3-5. 確認
+- `qa` の全項目が OK で `ready/<id>.mp4` と `ready/<id>.txt`（説明文）ができる。
+- 見た目：`.venv\Scripts\python scripts\preview_video.py <id>` → `work/<id>/preview.png`（hook・各段落・最後のコマ）。字幕の読みやすさは `--crop`。
+- ユーザーに動画を渡す。字幕の大きさ・BGM の音量などの判断は、ユーザーがスマホで見て決める（数値は `config.yaml`）。
+
+### 3-6. 投稿（人が手動で）
+- YouTube Studio で `ready/<id>.mp4` を上げ、説明欄に `ready/<id>.txt` を貼る。自動投稿はしない（D-003）。
+- BGM：方針は自作 BGM（`assets/bgm/`、[bgm.md](bgm.md)）。Studio のエディタ（「音声」）で後付けできるのは YouTube オーディオライブラリの曲だけで、自作曲の Content ID 収益にはつながらない。
+
+## 4. 声
+
+- 使える声は `config.yaml` の `voices`。物語 JSON の `"voice"` で選ぶ（なければ `tts.default_voice`）。
+- いまの声（D-011）：`ofutonp`（男性・既定）、`ofutonp_kanashimi`、`tsukuyomi`（女性）、`aida`・`aida_calm`（男性、AivisSpeech）。
+- 聞き比べ：`.venv\Scripts\python scripts\voice_samples.py --id <承認済みの id> --paragraph 2 ofutonp aida coeiroink:21`
+  - `エンジン名:スタイルID` で未登録の声も試せる。`work/voice_samples/00_all.wav` に順につながる。
+- 声を足す：
+  1. 一覧を見る：`setup_tools.py coeiroink-voices`（COEIROINK 公式）／ AivisHub（`https://hub.aivis-project.com`）
+  2. 規約を確認する（商用利用・クレジット表記）。COEIROINK はキャラのページ、AivisHub はモデルのライセンス（ACML なら商用可・表記任意）。
+  3. 大きさを伝えて了承を得てから入れる（1 の表のコマンド）。COEIROINK は入れたら再起動。
+  4. `config.yaml` と `config.example.yaml` の `voices` に、`engine`・`style_id`・`credit`（規約どおりの表記）を足す。
+  5. `scripts/tts_status.py` で OK を確かめ、`decisions.md` に規約の確認結果を書く。
+
+## 5. 読み間違い・アクセント
+
+- 確かめる：`.venv\Scripts\python scripts\check_story.py <id> --readings`（物語の声のエンジンで読む）
+- 直す：`assets/tts/user_dict.yaml` に足す。次の tts から、使うエンジン（COEIROINK にも）へ反映される。
+
+```yaml
+- surface: 小部屋
+  pronunciation: コベヤ   # カタカナ
+  accent_type: 0          # 音が下がる直前のモーラの位置。0 = 平板
+```
+
+- 辞書で直らないもの：数字（「十八歳」など。数字の読みは辞書より先に決まる）、ほかの言葉にも効いてしまう1字の語（「柄」→ え／がら）。この場合は文を書き換える。
+- 字幕は元の文のまま。読み上げだけかぎかっこを外している（エンジンが前後に間を入れるため）。
+
+## 6. つまずきやすいところ
+
+| 症状 | 原因と対処 |
+|---|---|
+| `エンジンに接続できません` | エンジンが止まっている（セッション終了で止まる）。2 の手順で起動 |
+| COEIROINK で `500` / `KeyError` | 起動後に足した声。COEIROINK を再起動する |
+| `tts_status.py` で NG | 声が入っていないか、`style_id` の間違い。エンジンの話者一覧で確かめる |
+| Openverse が `504` | 混んでいる。スクリプトは数回やり直す。だめなら少し待つ |
+| 選んだ画像と違う画像が来た | 検索結果の順番が変わった。`id:` で指定する |
+| 端末の日本語が文字化けする | Git Bash からは `PYTHONIOENCODING=utf-8` を付ける。`python -I` のときは環境変数が効かないので `python -I -X utf8` |
+| ffmpeg の drawtext / subtitles がパスで失敗 | Windows のドライブ文字の `:` が原因。render は root で ffmpeg を動かして相対パスを渡している |
+| 動画が 59 秒を超えそう | 本文を短くする。目安は 250〜280 字（いまの声で 45〜52 秒） |
+
+## 7. 外部とのやりとり
+
+- 有料 API は使わない。外部への通信は、ダウンロード（エンジン・声・フォント）と Openverse の画像検索・取得だけ。
+- AivisSpeech は必ず `--disable_sentry` で起動する（エラー情報の外部送信を切る）。
+- アプリ内ブラウザで YouTube Music などを開くと音が鳴ることがある。調べ終わったらタブを閉じる。

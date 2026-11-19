@@ -1,0 +1,19 @@
+{
+  "id": "sample-001",
+  "title": "最後の自動販売機",
+  "hook": "その自販機は、願いを売っていた",
+  "body": "駅の裏の路地に、誰も補充しない自動販売機がある。ボタンには飲み物の名前ではなく、「勇気」「眠り」「やり直し」と書かれていた。\n僕は百円を入れて「勇気」を押した。出てきたのは、ただの缶コーヒーだった。それでも一口飲むと、ずっと言えなかった退職届を出す気になれた。翌日も、その翌日も、僕は自販機に通った。\nある夜、最後のボタンに気づいた。「補充係」。押すと、自販機の扉が静かに開いた。中には誰もいない。代わりに、僕の名札がかかっていた。",
+  "image_prompts": [
+    "a lonely vending machine glowing in a dark back alley near a train station, night, rain",
+    "close-up of a hand holding a plain coffee can under vending machine light, warm and quiet mood",
+    "an open vending machine door revealing an empty interior and a hanging name tag, eerie calm"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "不思議な話"
+  ],
+  "approved": true,
+  "notes": "パイプラインの動作確認用サンプル（214字と短め。本番は250〜280字）",
+  "voice": "tsukuyomi"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "20261119-001",
+  "title": "宇宙からの第一声",
+  "hook": "宇宙人の第一声は、苦情だった",
+  "body": "ついに、宇宙からの信号が解読された。世界中の学者が集まり、息をのんで大きな画面を見つめた。人類が初めて受け取る、異星の言葉だ。\n画面に文字が浮かんだ。「そちらの電波がうるさくて眠れません。夜だけでも止めてもらえませんか」。誰かが「翻訳の間違いだ」とつぶやいたが、何度確かめても同じだった。会場は静まり返り、やがて全員が、そろって頭を抱えた。\n若い研究者が古い記録を調べて、青ざめた。同じ信号は、百年前から毎晩届いていた。人類はそれを、ずっと宇宙の雑音だと思っていたのだ。最初の一通は、もっと丁寧な言葉だったという。",
+  "image_prompts": [
+    "a radio telescope dish under a starry night sky",
+    "scientists staring at a glowing screen in a dark control room",
+    "old paper records and a desk lamp in a dim archive"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "SF"
+  ],
+  "approved": true,
+  "notes": "2026-11-19 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: radio telescope night / control room screens / old documents archive",
+  "voice": "aida"
+}

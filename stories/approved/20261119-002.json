@@ -1,0 +1,19 @@
+{
+  "id": "20261119-002",
+  "title": "4.5階",
+  "hook": "エレベーターに4.5階があった",
+  "body": "残業続きのある夜、会社のエレベーターに見慣れないボタンがあった。「4.5階」。四階と五階のボタンのあいだに、ひっそりと並んでいる。疲れていた僕は、何も考えずに押していた。\n扉が開くと、畳の小部屋に白髪の男が座っていた。男は湯のみを差し出し、「少し休んでいきなさい」と笑った。お茶は、驚くほど温かかった。男のネクタイは、僕のものとまったく同じだった。\n帰りぎわ、僕は聞いた。「この忙しさは、いつか終わりますか」。男はうなずいた。「ああ、必ず終わる」。そして腕時計を見て、立ち上がった。「さて、休憩はおしまいだ。残業に戻るか」。",
+  "image_prompts": [
+    "elevator buttons glowing in an empty office building at night",
+    "a cup of green tea on a tatami mat in a quiet small room",
+    "an empty office at night with a single desk lamp on"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ブラックユーモア"
+  ],
+  "approved": true,
+  "notes": "2026-11-19 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: elevator buttons / green tea cup / office at night",
+  "voice": "ofutonp"
+}

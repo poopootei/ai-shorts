@@ -1,0 +1,18 @@
+# 読み・アクセントの辞書。tts を実行するたびに、使うエンジン（COEIROINK / AivisSpeech / VOICEVOX）へ反映する。
+# pronunciation: カタカナの読み
+# accent_type:   音が下がる直前のモーラの位置。0 = 平板（下がらない）。例: カ/ン/コ'/ー/ヒ/ー → 3
+# word_type:     PROPER_NOUN / COMMON_NOUN（省略時）/ VERB / ADJECTIVE / SUFFIX
+# priority:      0〜10（省略時 5）。大きいほど優先
+
+- surface: 缶コーヒー
+  pronunciation: カンコーヒー
+  accent_type: 3
+- surface: 異星
+  pronunciation: イセイ
+  accent_type: 0
+- surface: 誕生日
+  pronunciation: タンジョウビ
+  accent_type: 3
+- surface: 小部屋
+  pronunciation: コベヤ
+  accent_type: 0

@@ -1,0 +1,5 @@
+numpy
+soundfile
+pyyaml
+requests
+pyloudnorm
