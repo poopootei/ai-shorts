@@ -28,6 +28,7 @@ Claude Code では、依頼に合うスキル（`.claude/skills/`）を使って
 | 依頼 | スキル |
 |---|---|
 | 動画を作る・作り直す（全体） | `make-shorts` |
+| 動画CHECK・投稿の記録・ボツと改善案・状況の一覧 | `review-and-post` |
 | 物語を書く・直す・承認する | `write-stories` |
 | 背景画像を選ぶ・差し替える | `pick-backgrounds` |
 | 読み間違い・アクセントを直す | `fix-readings` |
@@ -47,4 +48,8 @@ Claude Code では、依頼に合うスキル（`.claude/skills/`）を使って
 
 - **物語 (story)**: 250〜280字のショートショート。`stories/*/{id}.json`
 - **work/{id}/**: 1本分の中間ファイル置き場
-- **ready/**: QA に合格した完成品
+- **ready/**: QA に合格し、動画CHECK（人）を待つもの
+- **upload/**: 動画CHECK に合格し、投稿（人が手動）を待つもの
+- **posted/**: 投稿済みの原本。物語は `stories/posted/`
+- **ボツ**: 物語は `stories/rejected/`、動画は `rejected/{id}-{n}.mp4`。理由と改善案を物語 JSON の `history` に必ず残す
+- **流れ**: 物語 → 物語CHECK（人）→ 動画 → 動画CHECK（人）→ 投稿（人）。状態は `python -m ai_shorts status`、改善案は `python -m ai_shorts ideas`（docs/runbook.md 3）

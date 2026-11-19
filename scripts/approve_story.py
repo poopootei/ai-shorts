@@ -3,7 +3,8 @@
     python scripts/approve_story.py 20261120-001 --note "オチを1文短くした" [--voice ofutonp]
 
 **ユーザーが承認したときだけ実行する**（CLAUDE.md の決まり 6。Claude が自分で承認しない）。
-approved: true にし、notes の先頭に「YYYY-MM-DD ユーザーが承認」と、直した点を書く。
+approved: true にし、notes の先頭に「YYYY-MM-DD ユーザーが承認」と、直した点を書く（history にも残す）。
+ボツにするときは `python -m ai_shorts reject-story <id> --reason ... --idea ...`。
 """
 
 from __future__ import annotations
@@ -37,6 +38,9 @@ def main() -> None:
             d["voice"] = args.voice
         d["approved"] = True
         d["notes"] = f"{dt.date.today().isoformat()} ユーザーが承認（{args.note}）。" + (d.get("notes") or "")
+        # 経緯は history に残す（python -m ai_shorts status / ideas が読む）
+        d.setdefault("history", []).append(
+            {"date": dt.date.today().isoformat(), "event": "story_approved", "note": args.note})
         dst.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         # 検査に通らなければ元に戻す
         rc = subprocess.run([sys.executable, str(ROOT / "scripts" / "check_story.py"), str(dst)]).returncode

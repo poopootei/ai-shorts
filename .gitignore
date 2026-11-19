@@ -7,6 +7,13 @@ work/*
 !work/.gitkeep
 ready/*
 !ready/.gitkeep
+# 動画の置き場（mp4・説明文は git に入れない。経緯は stories/*/{id}.json の history）
+upload/*
+!upload/.gitkeep
+posted/*
+!posted/.gitkeep
+rejected/*
+!rejected/.gitkeep
 
 *.wav
 *.mp3

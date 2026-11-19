@@ -7,6 +7,7 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 | やること | スキル | この文書の節 |
 |---|---|---|
 | 動画を作る（全体の流れ） | `make-shorts` | 3 |
+| 動画CHECK・投稿の記録・ボツ・状況の一覧 | `review-and-post` | 3-5〜3-7 |
 | 物語を書く・承認する | `write-stories` | 3-1〜3-2 |
 | 背景画像を選ぶ | `pick-backgrounds` | 3-3 |
 | 読み間違いを直す | `fix-readings` | 5 |
@@ -47,6 +48,23 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 
 ## 3. 1本（または数本）作る流れ
 
+```
+物語 → 物語CHECK（人）→ 背景 → 合成・QA → 動画CHECK（人）→ 投稿（人）→ 記録
+```
+
+| 状態 | 物語 | 動画 | 次にやること |
+|---|---|---|---|
+| 物語CHECK待ち | `stories/draft/` | – | 全文を読んで承認かボツ |
+| 動画づくり待ち／QA NG | `stories/approved/` | `work/<id>/` | 背景を選んで合成 |
+| 動画CHECK待ち | `stories/approved/` | `ready/` | スマホで見て OK かボツ |
+| 投稿待ち | `stories/approved/` | `upload/` | YouTube Studio で投稿 |
+| 投稿済み | `stories/posted/` | `posted/` | – |
+| ボツ | `stories/rejected/` | `rejected/<id>-<n>.mp4` | 改善案として残す |
+
+- いまの状態：`.venv\Scripts\python -m ai_shorts status`
+- ボツの理由と改善案：`.venv\Scripts\python -m ai_shorts ideas`。**物語を書く前と動画を作る前に読む。**
+- 経緯は物語 JSON の `history`（承認・ボツ・投稿の日付と内容）。git で残る。
+
 ### 3-1. 物語を書く（Claude Code セッション内）
 - [story-guidelines.md](story-guidelines.md) に沿って書き、`stories/draft/{YYYYMMDD-NNN}.json` に保存する。id は作った日付＋連番。
 - `"voice"` に雰囲気に合う声の候補を入れる（`config.yaml` の `voices`）。
@@ -58,6 +76,8 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 - 下書きの全文をユーザーに見せて、承認をもらう。**Claude が自分で承認しない**（CLAUDE.md の決まり 6）。
 - 承認されたら：`.venv\Scripts\python scripts\approve_story.py <id> --note "直した点"`（直していなければ `--note` は省略）
   - 検査に NG があると承認されず draft に残る。
+- ボツなら：`.venv\Scripts\python -m ai_shorts reject-story <id> --reason "理由" --idea "改善案"` → `stories/rejected/`。消さずに改善案としてためる。
+  - 直して出し直すときは `revive-story <id>` で draft に戻し、もう一度承認を求める。
 
 ### 3-3. 背景画像（ComfyUI ができるまでの仮。D-008）
 1. 候補を並べる：`.venv\Scripts\python scripts\preview_backgrounds.py --name <id> "検索語1" "検索語2" "検索語3"`
@@ -72,14 +92,24 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
   - 一部だけやり直すとき：`subs` / `render` / `qa` を個別に。字幕や画像を変えただけなら tts は不要。
   - 「上限を超えています」で止まったら本文を短くする（話速は `speed_max` まで自動で上がる）。
 
-### 3-5. 確認
+### 3-5. 動画CHECK（人）
 - `qa` の全項目が OK で `ready/<id>.mp4` と `ready/<id>.txt`（説明文）ができる。
 - 見た目：`.venv\Scripts\python scripts\preview_video.py <id>` → `work/<id>/preview.png`（hook・各段落・最後のコマ）。字幕の読みやすさは `--crop`。
 - ユーザーに動画を渡す。字幕の大きさ・BGM の音量などの判断は、ユーザーがスマホで見て決める（数値は `config.yaml`）。
+- OK なら：`.venv\Scripts\python -m ai_shorts approve-video <id> --note "コメント"` → `upload/`（投稿待ち）。**Claude が自分で OK にしない。**
+- ボツなら：`.venv\Scripts\python -m ai_shorts reject-video <id> --reason "理由" --idea "改善案" --remake`
+  - 動画は `rejected/<id>-<n>.mp4` に残る（n は何回目のボツか）。`--remake` は物語を approved に残して作り直す。`--drop` は物語ごとボツ。
 
 ### 3-6. 投稿（人が手動で）
-- YouTube Studio で `ready/<id>.mp4` を上げ、説明欄に `ready/<id>.txt` を貼る。自動投稿はしない（D-003）。
+- YouTube Studio で `upload/<id>.mp4` を上げ、説明欄に `upload/<id>.txt` を貼る。自動投稿はしない（D-003）。
 - BGM：方針は自作 BGM（`assets/bgm/`、[bgm.md](bgm.md)）。Studio のエディタ（「音声」）で後付けできるのは YouTube オーディオライブラリの曲だけで、自作曲の Content ID 収益にはつながらない。
+
+### 3-7. 投稿の記録
+- 投稿したら：`.venv\Scripts\python -m ai_shorts posted <id> --platform youtube --url <URL> [--date 公開日]`
+  - mp4・txt は `posted/` へ、物語は `stories/posted/` へ移る。予約投稿なら `--date` は公開日。
+  - ほかの場所にも上げたら、`--platform instagram` などでもう一度実行（記録が足されるだけ）。
+- `posted/`・`rejected/` の mp4 は git に入らない。消すとき・バックアップはユーザーが決める。
+- `all --approved` は、`ready/`・`upload/` に動画がある物語を飛ばす（作り直すときは `--id` で）。
 
 ## 4. 声
 
