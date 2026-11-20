@@ -3,6 +3,8 @@
 文を1行 max_chars_per_line 字以内に区切り、文の時間を字数に比例して割り振る。
 区切る位置は、句読点の後と「ひらがな → 漢字・カタカナ」の切れ目（文節の切れ目に近い）から選び、
 行の長さがそろうようにする。冒頭 hook_seconds 秒は hook を大きく出す。
+hook_alone なら hook は最初の文が始まるまでに消し、本文の字幕と重ねない（D-013）。
+hook_box なら hook を半透明の帯で囲み、本文と見た目でも区別する。
 subs.json は qa が行の長さと位置を検査するのに使う。
 """
 
@@ -116,13 +118,16 @@ def wrap(text: str, max_chars: int) -> list[str]:
 
 def build_events(
     timing: dict, hook: str, *, max_chars: int, linger: float, sub_y: int,
-    hook_seconds: float, hook_max_chars: int, hook_y: int,
+    hook_seconds: float, hook_max_chars: int, hook_y: int, hook_alone: bool = False,
 ) -> list[Event]:
     events: list[Event] = []
-    if hook and hook_seconds > 0:
-        events.append(Event(0.0, hook_seconds, "Hook", wrap(hook, hook_max_chars), hook_y))
-
     sentences = timing["sentences"]
+    hook_end = hook_seconds
+    if hook_alone and sentences:
+        hook_end = min(hook_end, sentences[0]["start"])
+    if hook and hook_end > 0:
+        events.append(Event(0.0, round(hook_end, 3), "Hook", wrap(hook, hook_max_chars), hook_y))
+
     for k, s in enumerate(sentences):
         lines = wrap(display_text(s["text"]), max_chars)
         total = sum(len(line) for line in lines)
@@ -151,20 +156,27 @@ def _ass_escape(text: str) -> str:
 
 
 def to_ass(events: list[Event], *, width: int, height: int, font_name: str,
-           font_size: int, hook_font_size: int, outline: float) -> str:
+           font_size: int, hook_font_size: int, outline: float,
+           hook_box: bool = False, hook_box_opacity: float = 0.75, hook_box_padding: float = 36) -> str:
     style_fmt = ("Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, "
                  "BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, "
                  "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding")
 
-    def style(name: str, size: int, border: float) -> str:
-        return (f"Style: {name},{font_name},{size},&H00FFFFFF,&H000000FF,&H00000000,&H64000000,"
-                f"0,0,0,0,100,100,0,0,1,{border:g},0,5,0,0,0,1")
+    def style(name: str, size: int, border: float, box: bool = False) -> str:
+        # BorderStyle 3 は縁取りの代わりに箱を描く（箱の色 = OutlineColour、Outline = 文字のまわりの余白）
+        if box:
+            alpha = round((1 - max(0.0, min(1.0, hook_box_opacity))) * 255)
+            outline_colour, border_style, border = f"&H{alpha:02X}000000", 3, hook_box_padding
+        else:
+            outline_colour, border_style = "&H00000000", 1
+        return (f"Style: {name},{font_name},{size},&H00FFFFFF,&H000000FF,{outline_colour},&H64000000,"
+                f"0,0,0,0,100,100,0,0,{border_style},{border:g},0,5,0,0,0,1")
 
     out = [
         "[Script Info]", "ScriptType: v4.00+", f"PlayResX: {width}", f"PlayResY: {height}",
         "WrapStyle: 2", "ScaledBorderAndShadow: yes", "",
         "[V4+ Styles]", style_fmt,
-        style("Sub", font_size, outline), style("Hook", hook_font_size, outline * 1.5), "",
+        style("Sub", font_size, outline), style("Hook", hook_font_size, outline * 1.5, hook_box), "",
         "[Events]",
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
     ]
@@ -198,11 +210,15 @@ def run(project: Project, story_id: str) -> None:
         hook_seconds=float(project.get("subs.hook_seconds")),
         hook_max_chars=int(project.get("subs.hook_max_chars_per_line")),
         hook_y=round(height * float(project.get("subs.hook_position_y_ratio"))),
+        hook_alone=bool(project.get("subs.hook_alone", False)),
     )
     ass = to_ass(
         events, width=width, height=height, font_name=project.get("subs.font_name"),
         font_size=font_size, hook_font_size=hook_font_size,
         outline=float(project.get("subs.outline")),
+        hook_box=bool(project.get("subs.hook_box", False)),
+        hook_box_opacity=float(project.get("subs.hook_box_opacity", 0.75)),
+        hook_box_padding=float(project.get("subs.hook_box_padding", 36)),
     )
     (work / "subs.ass").write_text(ass, encoding="utf-8")
     (work / "subs.json").write_text(

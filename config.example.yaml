@@ -9,7 +9,7 @@ tts:
   pause_between_sentences: 0.3
   pause_between_paragraphs: 0.6   # 段落の境目（画像の切り替え位置）
   sample_rate: 48000
-  pre_silence: 1.0
+  pre_silence: 2.0          # 声が始まるまでの無音。この間に冒頭の hook だけを見せる（subs.hook_alone、D-013）
   post_silence: 1.0
   max_voice_seconds: 58.0
 
@@ -38,15 +38,19 @@ comfyui:
 subs:
   font_file: assets/fonts/NotoSerifJP-Medium.otf
   font_name: Noto Serif JP Medium  # libass はファミリー名（name ID 1）で探す
-  font_size: 80              # 1行12字 × 80px = 960px（左右に余白40pxずつ）
-  outline: 5
-  max_chars_per_line: 12
+  font_size: 92              # 1行10字 × 92px = 920px（左右に余白80pxずつ）。2026-11-20 スマホで小さいとの指摘で 80 → 92
+  outline: 6
+  max_chars_per_line: 10
   position_y_ratio: 0.45    # 画面上端からの割合。下20%には置かない
   linger_seconds: 0.3       # 文の読み終わりのあと、字幕を残す長さ（次の文までの間を超えない）
-  hook_seconds: 2.0
-  hook_font_size: 110
+  hook_seconds: 2.0         # 冒頭に hook を出す長さ
+  hook_alone: true          # hook は最初の文が始まるまでに消し、本文の字幕と重ねない（D-013）
+  hook_font_size: 104
   hook_max_chars_per_line: 8
-  hook_position_y_ratio: 0.28
+  hook_position_y_ratio: 0.40
+  hook_box: true            # hook を半透明の帯で囲んで、本文と見分けやすくする
+  hook_box_opacity: 0.75    # 帯の濃さ（0 = 透明、1 = 真っ黒）
+  hook_box_padding: 36      # 文字のまわりの帯の余白（px）
 
 render:
   width: 1080

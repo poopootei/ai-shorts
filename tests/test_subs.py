@@ -75,6 +75,22 @@ def test_build_events_splits_time_by_characters_and_lingers():
     assert subs[2].end == 7.3
 
 
+def test_hook_alone_ends_before_first_sentence():
+    ev = build_events(TIMING, "その自販機は", max_chars=15, linger=0.3, sub_y=864,
+                      hook_seconds=2.0, hook_max_chars=10, hook_y=760, hook_alone=True)
+    hook = ev[0]
+    first_sub = next(e for e in ev if e.style == "Sub")
+    assert hook.style == "Hook" and hook.end == 1.0 <= first_sub.start
+
+
+def test_hook_box_style():
+    ass = to_ass(events(), width=1080, height=1920, font_name="F", font_size=64, hook_font_size=104,
+                 outline=4, hook_box=True, hook_box_opacity=0.75, hook_box_padding=36)
+    # BorderStyle 3（箱）、箱の色は 25% 透明の黒、余白 36
+    assert "Style: Hook,F,104,&H00FFFFFF,&H000000FF,&H40000000,&H64000000,0,0,0,0,100,100,0,0,3,36," in ass
+    assert "Style: Sub,F,64,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,4," in ass
+
+
 def test_to_ass_has_styles_and_positions():
     ass = to_ass(events(), width=1080, height=1920, font_name="Noto Serif JP Medium",
                  font_size=64, hook_font_size=88, outline=4)
