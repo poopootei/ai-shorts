@@ -1,6 +1,8 @@
 # ai-shorts
 
-AIで書いたショートショートを音声合成（COEIROINK / AivisSpeech）で朗読し、縦型ショート動画（YouTube Shorts / Instagram Reels）にするローカル制作パイプライン。
+YouTube チャンネル「[ショートショートの世界へ](https://www.youtube.com/@ショートショートの世界へ)」の運用全般（動画づくりとチャンネルのマネジメント）を扱うリポジトリ。チャンネルの情報は [docs/channel.md](docs/channel.md)。
+
+中心は、AIで書いたショートショートを音声合成（COEIROINK / AivisSpeech）で朗読し、縦型ショート動画（YouTube Shorts / Instagram Reels）にするローカル制作パイプライン。
 
 - **すべてローカル・無料**（有料APIは使わない）
 - **自動化するのは mp4 ができるまで**。投稿は手動（YouTube Studio の予約投稿）。投稿したことは記録する
