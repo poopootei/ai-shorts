@@ -14,13 +14,21 @@
     "不思議な話"
   ],
   "voice": "tsukuyomi",
-  "approved": true,
+  "approved": false,
   "notes": "2026-11-21 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: snowman park / snowy street / snowman red scarf",
   "history": [
     {
       "date": "2026-11-21",
       "event": "story_approved",
       "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "video_rejected",
+      "reason": "動画で見ると物語の意味がよくわからない。背景画像が合っていない（1枚目と3枚目が別の雪だるま、目が赤い）",
+      "idea": "耳だけで追えるか確かめる：オチ（寒い→冷凍庫を空ける）のつながりを本文で分かるようにする。物語の主役が同じ物として何度も出る話は、同じ被写体の写真がないので画像生成ができるまで避ける",
+      "file": "rejected/20261121-003-1.mp4",
+      "next": "ボツ"
     }
   ]
 }

@@ -21,6 +21,11 @@
       "date": "2026-11-21",
       "event": "story_approved",
       "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "video_approved",
+      "note": "OK"
     }
   ]
 }
