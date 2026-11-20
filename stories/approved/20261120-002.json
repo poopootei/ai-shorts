@@ -1,0 +1,26 @@
+{
+  "id": "20261120-002",
+  "title": "人間の取扱説明書",
+  "hook": "人間の説明書が届いた",
+  "body": "ある朝、世界中の家のポストに、厚い冊子が一冊ずつ届いた。表紙には「人間の取扱説明書」とある。誰かのいたずらだと笑った人々も、中を読んで黙りこんだ。\n「眠れないときは、一度すべての画面を消してください」。「イライラが止まらないときは、水を一杯飲み、深呼吸を三回してください」。書いてあることは、どれも驚くほどよく効いた。学者たちは、作った者の正体を知ろうと、最後のページを開いた。\n問い合わせ先の代わりに、小さな字でこう書かれていた。「本製品の保証期間は、出荷から十万年です」。計算した学者は、静かに冊子を閉じた。人類は、とうに保証の切れた製品だったのだ。",
+  "image_prompts": [
+    "a thick booklet in a mailbox in the morning",
+    "people reading booklets in a quiet room",
+    "a closed old manual on a desk under a lamp"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ブラックユーモア"
+  ],
+  "voice": "ofutonp",
+  "approved": true,
+  "notes": "2026-11-20 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: mailbox morning / reading booklet / old book desk lamp",
+  "history": [
+    {
+      "date": "2026-11-20",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    }
+  ]
+}

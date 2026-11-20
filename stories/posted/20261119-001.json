@@ -15,5 +15,17 @@
   ],
   "approved": true,
   "notes": "2026-11-19 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: radio telescope night / control room screens / old documents archive",
-  "voice": "aida"
+  "voice": "aida",
+  "history": [
+    {
+      "date": "2026-11-20",
+      "event": "video_approved",
+      "note": "ユーザーが投稿済み（記録の仕組みができる前に投稿）"
+    },
+    {
+      "date": "2026-11-20",
+      "event": "posted",
+      "platform": "youtube"
+    }
+  ]
 }

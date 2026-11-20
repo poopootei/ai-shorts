@@ -1,0 +1,26 @@
+{
+  "id": "20261120-001",
+  "title": "九時の散歩",
+  "hook": "犬は毎晩、誰を待つのか",
+  "body": "父が亡くなってから、うちの犬は毎晩九時になると玄関に座る。父と散歩に出ていた時間だ。誰もいない扉を見つめて、小さく鼻を鳴らす。\nある夜、私はリードを手に取った。犬は迷わず歩き出し、知らない路地を抜けて、川沿いの古いベンチで止まった。そこには、年配の女性がひとり座っていた。「あら、今日は息子さんなのね」。彼女は犬をなでながら、父が毎晩ここで、私の話ばかりしていたと教えてくれた。\n父は家では、私をほめたことなど一度もなかった。帰り道、犬は振り返りながら、何度もしっぽを振った。父の散歩がいつも一時間かかった理由を、私はやっと知った。",
+  "image_prompts": [
+    "a dog sitting alone at a front door at night",
+    "an old bench by a river under street lights at night",
+    "a man walking a dog on a quiet night street"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ほっこり"
+  ],
+  "voice": "aida_calm",
+  "approved": true,
+  "notes": "2026-11-20 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: dog door night / riverside bench night / night walk dog",
+  "history": [
+    {
+      "date": "2026-11-20",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    }
+  ]
+}

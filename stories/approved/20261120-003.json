@@ -1,0 +1,26 @@
+{
+  "id": "20261120-003",
+  "title": "あしたの返却",
+  "hook": "なくした本が帰ってきた",
+  "body": "朝、図書館の返却ポストを開けると、古びた絵本が一冊入っていた。表紙の色はあせ、かどは丸くすり切れている。背にはうちの図書館のラベルがある。けれど調べてみると、ずっと昔に「紛失」として消された本だった。\n本の後ろには、紙の貸出カードがはさまっていた。いちばん下の欄を見て、私は息をのんだ。三十年前の日付の横に、ひらがなで私の名前が書いてある。子どものころ、借りた本をなくして泣いたことを思い出した。\nカードの裏には、鉛筆で小さなメモがあった。大きくゆがんだ、子どもの字だった。「おもしろかったです。あした、かえします」。あしたは、ずいぶん遠かったらしい。",
+  "image_prompts": [
+    "an old worn picture book in a library return box",
+    "an old paper library card with handwritten names",
+    "a child's pencil note on yellowed paper"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "不思議な話"
+  ],
+  "voice": "tsukuyomi",
+  "approved": true,
+  "notes": "2026-11-20 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: old picture book / library card / pencil note paper",
+  "history": [
+    {
+      "date": "2026-11-20",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    }
+  ]
+}
