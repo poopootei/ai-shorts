@@ -21,6 +21,19 @@
       "date": "2026-11-20",
       "event": "story_approved",
       "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-20",
+      "event": "video_rejected",
+      "reason": "テロップの文字が小さい",
+      "idea": "subs.font_size を上げ、1行の字数を減らす",
+      "file": "rejected/20261120-003-1.mp4",
+      "next": "作り直す"
+    },
+    {
+      "date": "2026-11-20",
+      "event": "video_approved",
+      "note": "字幕を大きくした版でOK"
     }
   ]
 }
