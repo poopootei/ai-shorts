@@ -34,6 +34,11 @@
       "date": "2026-11-20",
       "event": "video_approved",
       "note": "字幕を大きくした版でOK"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "posted",
+      "platform": "youtube"
     }
   ]
 }
