@@ -3,3 +3,5 @@ soundfile
 pyyaml
 requests
 pyloudnorm
+google-api-python-client
+google-auth-oauthlib
