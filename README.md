@@ -121,6 +121,7 @@ ai-shorts/
 │   ├── pipeline.md        工程ごとの仕様
 │   ├── bgm.md             BGM制作と TuneCore 申請のルール
 │   ├── story-guidelines.md 物語の書き方と人が確認する点
+│   ├── channel-ideas.md   新しいチャンネルの案（中身・いいところ・懸念点）
 │   └── decisions.md       決定事項の記録
 ├── stories/
 │   ├── draft/             生成直後（物語CHECK待ち）
