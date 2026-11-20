@@ -4,7 +4,7 @@
 
     stories/draft/      物語CHECK待ち
     stories/approved/   物語CHECK合格。動画は work/ → ready/（動画CHECK待ち）→ upload/（投稿待ち）
-    stories/posted/     投稿済み。動画は posted/
+    stories/posted/     投稿済み。動画は posted/（upload で予約投稿したものも、手で上げて posted で記録したものも）
     stories/rejected/   ボツ（物語でも動画でも）。ボツ動画は rejected/
 
 ボツにするときは理由（reason）と改善案（idea）を必ず残す。次に物語を書くときと
@@ -229,7 +229,7 @@ def _video_state(project: Project, story_id: str) -> tuple[str, str]:
     if (root / "ready" / f"{story_id}.mp4").exists():
         return "動画CHECK待ち", f"ready/{story_id}.mp4 を見て OK なら approve-video、だめなら reject-video"
     if (root / "upload" / f"{story_id}.mp4").exists():
-        return "投稿待ち", f"upload/{story_id}.mp4 を投稿したら posted で記録"
+        return "投稿待ち", "頼まれたら upload で予約投稿（手で上げたら posted で記録）"
     qa = root / "work" / story_id / "qa.json"
     if qa.exists():
         try:

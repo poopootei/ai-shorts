@@ -100,12 +100,36 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 - ボツなら：`.venv\Scripts\python -m ai_shorts reject-video <id> --reason "理由" --idea "改善案" --remake`
   - 動画は `rejected/<id>-<n>.mp4` に残る（n は何回目のボツか）。`--remake` は物語を approved に残して作り直す。`--drop` は物語ごとボツ。
 
-### 3-6. 投稿（人が手動で）
-- YouTube Studio で `upload/<id>.mp4` を上げ、説明欄に `upload/<id>.txt` を貼る。自動投稿はしない（D-003）。
+### 3-6. 投稿（予約投稿）
+投稿するのは、ユーザーが「投稿して」と言ったときだけ（CLAUDE.md の2、D-015）。
+
+はじめに一度だけ（ユーザーが行う）：
+1. Google Cloud Console でプロジェクトを作り、「YouTube Data API v3」を有効にする。
+2. OAuth 同意画面（Google Auth Platform）を作る。対象は「外部」。公開ステータスを「本番環境」にする（「テスト」のままだとログインが 7 日で切れる）。Google の確認（審査）は申し込まなくてよい。
+3. OAuth クライアント ID を作る（種類は「デスクトップ アプリ」）。JSON をダウンロードして `secrets/youtube_client_secret.json` に置く（`secrets/` は git 管理外）。
+4. `config.example.yaml` の `youtube:` を `config.yaml` にコピーし、公開時刻（`publish_time`）などを決める。
+5. `.venv\Scripts\python -m pip install -r requirements.txt`
+6. `.venv\Scripts\python -m ai_shorts youtube-login` → ブラウザでチャンネルの Google アカウントを選ぶ。「Google はこのアプリを確認していません」と出たら「詳細」→「（アプリ名）に移動」。`secrets/youtube_token.json` ができる。
+
+投稿するとき：
+- まず予定を見せる：`.venv\Scripts\python -m ai_shorts upload --all --dry-run`（id を並べてもよい。公開はその順に 1 日 1 本）。外部には何も送らない。
+- 了承をもらったら `--dry-run` を外して実行する。1 本ずつ上げて、`posted` の記録（URL・公開日）まで行う。途中で止まったら、残りは `upload/` に残る（記録したものが二重に上がることはない）。
+- 公開日は、これまでの YouTube の公開日（`stories/posted/` の history）の翌日から。早くても今から `min_lead_minutes` 先の枠。`--start YYYY-MM-DD` で決めてもよい。
+- 上げたら YouTube Studio で、予約の日時と、ショートとして扱われているかを確かめる。Studio で公開日を変えたら、`stories/posted/<id>.json` の history の date も直す。
+- **BGM の Content ID は公開前に確かめる。** Content ID はアップロードした時点で調べられるので、非公開・予約のままでも結果が出る。API からは読めないので Studio で見る。終わるまでの時間は決まっていないので、公開の1日以上前に上げておく。
+  1. Studio →「コンテンツ」→「ショート」タブ → フィルタで「申し立て」。
+  2. 「制限」の列の「申し立て」にカーソルを当てて「詳細を表示」→「使用されているコンテンツ」の「詳細を表示」。
+  3. 正しく紐づいていれば、自分の曲名・申し立て者（TuneCore Japan など）・対応「収益化」が出る。
+  - 申し立てがない：検出されていない（BGM の音量が小さい、登録がまだ有効でない、など）。曲の別の部分や別の権利者が出ている：BGM を見直す。どちらも、公開日までに Studio で予約を外すか日時をずらし、ユーザーと対応を決める。
+  - 動画は59秒以下なので、申し立てが付いてもブロックはされない（ブロックされるのは1分を超えるショート）。
+  - 公開後に申し立てが付くこともある（YouTube からメールが来る）。
+- 「ログインが切れています」と出たら `youtube-login` をやり直す。
+
+手で上げるとき：YouTube Studio で `upload/<id>.mp4` を上げ、説明欄に `upload/<id>.txt` を貼る。そのあと 3-7 で記録する。
 - BGM：方針は自作 BGM（`assets/bgm/`、[bgm.md](bgm.md)）。Studio のエディタ（「音声」）で後付けできるのは YouTube オーディオライブラリの曲だけで、自作曲の Content ID 収益にはつながらない。
 
 ### 3-7. 投稿の記録
-- 投稿したら：`.venv\Scripts\python -m ai_shorts posted <id> --platform youtube --url <URL> [--date 公開日]`
+- `upload` で上げたものは記録済み。手で上げたとき・ほかの場所に上げたときは：`.venv\Scripts\python -m ai_shorts posted <id> --platform youtube --url <URL> [--date 公開日]`
   - mp4・txt は `posted/` へ、物語は `stories/posted/` へ移る。予約投稿なら `--date` は公開日。
   - ほかの場所にも上げたら、`--platform instagram` などでもう一度実行（記録が足されるだけ）。
 - `posted/`・`rejected/` の mp4 は git に入らない。消すとき・バックアップはユーザーが決める。

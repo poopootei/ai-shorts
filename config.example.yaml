@@ -79,3 +79,15 @@ bgm:
   path: assets/bgm/track01.wav
   gain_db: -18              # Content ID の検出テストで決める（-14 / -18 / -22）
   start_seconds: 0          # 曲の頭から使う
+
+# YouTube への予約投稿（python -m ai_shorts upload、D-015）。認証情報は secrets/ に置き、git に入れない
+youtube:
+  client_secret: secrets/youtube_client_secret.json  # Google Cloud の OAuth クライアント（デスクトップアプリ）
+  token: secrets/youtube_token.json                   # 初回ログイン（youtube-login）で作られる
+  publish_time: "18:00"     # 公開の時刻。1 日 1 本（引用符で囲む）
+  utc_offset: "+09:00"      # publish_time のタイムゾーン（日本時間）
+  min_lead_minutes: 60      # 今から最低これだけ先の枠に入れる
+  category_id: 24           # 24 = エンターテイメント
+  language: ja
+  made_for_kids: false
+  contains_synthetic_media: false   # 「改変または合成されたコンテンツ」の申告。実在の人や出来事に見えるものではないので false（D-015）
