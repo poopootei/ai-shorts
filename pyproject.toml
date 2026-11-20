@@ -13,6 +13,8 @@ dependencies = [
     "pyyaml",
     "requests",
     "pyloudnorm",
+    "google-api-python-client",  # YouTube への予約投稿（upload）
+    "google-auth-oauthlib",
 ]
 
 [project.optional-dependencies]

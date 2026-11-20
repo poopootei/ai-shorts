@@ -5,7 +5,7 @@ YouTube チャンネル「[ショートショートの世界へ](https://www.you
 中心は、AIで書いたショートショートを音声合成（COEIROINK / AivisSpeech）で朗読し、縦型ショート動画（YouTube Shorts / Instagram Reels）にするローカル制作パイプライン。
 
 - **すべてローカル・無料**（有料APIは使わない）
-- **自動化するのは mp4 ができるまで**。投稿は手動（YouTube Studio の予約投稿）。投稿したことは記録する
+- **投稿は頼んだときだけ**。動画CHECK に通ったものを `upload` で予約投稿し、投稿したことを記録する（YouTube Data API、権限は投稿だけ）
 - **人の CHECK を2回通す**：物語CHECK と 動画CHECK。ボツは理由と改善案を残して次に活かす
 - **主な収益源は BGM**：自作BGMを TuneCore Japan 経由で YouTube Content ID に登録し、動画での使用分を得る。ショート動画そのものの広告収益は狙わない
 
@@ -38,8 +38,8 @@ work/{id}/                ← 1本ごとの中間ファイル
       │  QA合格
 ready/{id}.mp4            ← 動画CHECK（人）── ボツ → rejected/{id}-{n}.mp4（作り直す or 物語ごとボツ）
       │  approve-video
-upload/{id}.mp4           ← 投稿待ち。人が YouTube Studio で投稿
-      │  posted（投稿を記録）
+upload/{id}.mp4           ← 投稿待ち
+      │  upload（予約投稿して記録。手で上げたら posted で記録）
 posted/{id}.mp4           ← 投稿済みの原本。物語は stories/posted/
 ```
 
@@ -99,7 +99,10 @@ python -m ai_shorts status                       # 状態ごとの一覧
 python -m ai_shorts ideas                        # ボツの理由と改善案
 python -m ai_shorts approve-video <id>           # 動画CHECK OK → upload/
 python -m ai_shorts reject-video  <id> --reason "..." --idea "..." --remake   # 作り直す（--drop で物語ごとボツ）
-python -m ai_shorts posted        <id> --platform youtube --url <URL>        # 投稿した → posted/
+python -m ai_shorts upload        --all --dry-run   # 公開の予定を見る（id を並べてもよい。1 日 1 本）
+python -m ai_shorts upload        --all             # YouTube に予約投稿して記録 → posted/
+python -m ai_shorts youtube-login                   # YouTube にログイン（初回・切れたとき）
+python -m ai_shorts posted        <id> --platform youtube --url <URL>        # 手で投稿した → posted/
 python -m ai_shorts reject-story  <id> --reason "..." --idea "..."           # 物語CHECK でボツ
 python -m ai_shorts revive-story  <id>           # ボツの物語を直すため draft に戻す
 ```

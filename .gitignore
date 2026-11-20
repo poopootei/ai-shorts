@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 config.yaml
+# YouTube の認証情報（OAuth クライアントとトークン）
+secrets/
 
 work/*
 !work/.gitkeep
