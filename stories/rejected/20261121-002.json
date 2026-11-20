@@ -1,0 +1,28 @@
+{
+  "id": "20261121-002",
+  "title": "絶対に起きられる時計",
+  "hook": "その時計は、ベルが鳴らない",
+  "body": "「絶対に寝坊しない目覚まし時計」という広告に、私は飛びついた。届いた時計には、ベルもスピーカーも付いていなかった。説明書には、ただ「設定した時刻に、電話をかけます」とだけ書いてある。\n翌朝六時、枕元のスマホが鳴った。出ると、聞き慣れた声がした。「起きなさい。いつまで寝てるの」。実家の母だった。時計は勝手に、いちばん効く相手を選んで電話をかけていたのだ。それ以来、私は一度も寝坊していない。\n先週、母から電話があった。「あの時計、便利そうね。私も買ったの」。次の朝、まだ暗い五時に、私のスマホが鳴った。電話の向こうから、母の大きないびきが聞こえてきた。",
+  "image_prompts": [
+    "an old alarm clock on a bedside table",
+    "a smartphone ringing on a pillow in the morning",
+    "a dark bedroom window before dawn"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ユーモア"
+  ],
+  "voice": "ofutonp",
+  "approved": false,
+  "notes": "Claude Code で生成。背景の仮検索語: alarm clock / phone bed morning / dark window dawn",
+  "history": [
+    {
+      "date": "2026-11-21",
+      "event": "story_rejected",
+      "reason": "「いちばん効く相手を選んで」の書き方がAIっぽすぎる（ユーザー）",
+      "idea": "仕組みやオチを地の文で説明しない。状況と台詞だけで読み手に気づかせる（例：その一文を削り、母の電話が毎朝続く描写で伝える）",
+      "from": "draft"
+    }
+  ]
+}

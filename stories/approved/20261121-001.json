@@ -1,0 +1,26 @@
+{
+  "id": "20261121-001",
+  "title": "満員の発表会",
+  "hook": "未来の観光地は、ここだった",
+  "body": "タイムマシンの発表会は、満員の観客で埋まっていた。博士は銀色の装置に乗りこみ、百年後の未来へ旅立った。そして一秒後、髪を乱して戻ってきた。\n「未来はどうでしたか」。記者たちが一斉に聞いた。博士は息を整えて答えた。「未来では、時間旅行が観光になっていました」。それから、こう続けた。「いちばん人気の行き先は、歴史に残る発明の瞬間だそうです」。\n会場が、しんと静まりかえった。記者のひとりが、ゆっくりと客席を振り返った。拍手を送る観客の半分は、見たことのない服を着ていた。最前列では、おじいさんになった博士本人が、照れくさそうに手を振っていた。",
+  "image_prompts": [
+    "a silver machine on a stage with cameras and a crowd",
+    "reporters with microphones in a crowded hall",
+    "an audience applauding in a dark theater"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "SF"
+  ],
+  "voice": "aida",
+  "approved": true,
+  "notes": "2026-11-21 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: stage machine / press conference / theater audience",
+  "history": [
+    {
+      "date": "2026-11-21",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "20261121-003",
+  "title": "近づく雪だるま",
+  "hook": "雪だるまが、毎朝近づいてくる",
+  "body": "公園に、誰かが大きな雪だるまを作った。丸い頭に、炭の目と、木の枝の腕。どこにでもある雪だるまだ。次の朝、雪だるまは公園の入り口まで動いていた。その次の朝は、私のアパートの前の道にいた。\n毎朝、少しずつ近づいてくる。足あとはどこにもない。炭の目は、いつも私の部屋の窓を見上げていた。怖くなった私は、カーテンを閉めて眠った。\n翌朝、ドアを開けると、雪だるまが玄関の前に立っていた。首には、私が去年なくした赤いマフラーが巻かれている。胸には、小さな紙が貼ってあった。「これ、返しにきました。ついでに、少しだけ寒いです」。私は少し考えて、冷凍庫を空けることにした。",
+  "image_prompts": [
+    "a snowman in a snowy park",
+    "a snowy street in front of an apartment at dawn",
+    "a snowman with a red scarf at a front door"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "不思議な話"
+  ],
+  "voice": "tsukuyomi",
+  "approved": true,
+  "notes": "2026-11-21 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: snowman park / snowy street / snowman red scarf",
+  "history": [
+    {
+      "date": "2026-11-21",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    }
+  ]
+}
