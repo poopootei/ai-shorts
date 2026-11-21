@@ -91,3 +91,10 @@ youtube:
   language: ja
   made_for_kids: false
   contains_synthetic_media: false   # 「改変または合成されたコンテンツ」の申告。実在の人や出来事に見えるものではないので false（D-015）
+
+# タブレットへの受け渡し（python -m ai_shorts share、D-016）。MiniPC で share_app/server.py が動く（LAN 専用）
+share:
+  host: lenovo                          # ssh の接続先（~/.ssh/config の Host 名）
+  remote_dir: projects/ai-shorts-share  # MiniPC のホームからの場所（server.py と data/ を置く）
+  port: 8040
+  url: http://192.168.1.7:8040/         # タブレットで開くアドレス

@@ -2,7 +2,7 @@
 
 動画を作る工程（tts / subs / render / qa / all）と、状態の管理
 （status / ideas / approve-video / reject-video / posted / reject-story / revive-story）、
-YouTube への予約投稿（upload / youtube-login）。
+YouTube への予約投稿（upload / youtube-login）、タブレットへの受け渡し（share）。
 """
 
 from __future__ import annotations
@@ -67,6 +67,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="公開の予定を表示するだけで、投稿しない")
 
     sub.add_parser("youtube-login", help="YouTube にログインする（初回・ログインが切れたとき）")
+
+    p = sub.add_parser("share", help="投稿待ち（upload/）を MiniPC に送り、タブレットで保存・コピーできるようにする")
+    p.add_argument("--install", action="store_true", help="MiniPC にサーバーを置いて起動し直す（初回・server.py を変えたとき）")
 
     p = sub.add_parser("reject-story", help="物語CHECKでボツ：stories/draft → stories/rejected")
     p.add_argument("id")
@@ -179,6 +182,11 @@ def main(argv: list[str] | None = None) -> int:
             from . import youtube
             youtube.login(project, force=True)
             print("YouTube にログインしました。")
+        elif args.stage == "share":
+            from . import share
+            if args.install:
+                share.install(project)
+            share.sync(project)
         elif args.stage == "reject-story":
             path = library.reject_story(project, args.id, args.reason, args.idea)
             print(f"ボツ → {path.relative_to(project.root).as_posix()}")

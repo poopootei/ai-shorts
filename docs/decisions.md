@@ -76,6 +76,13 @@
 - 「改変または合成されたコンテンツ」の申告（`containsSyntheticMedia`）は false。合成音声で朗読しているが、実在の人や出来事に見えるものではないため。変えるなら `youtube.contains_synthetic_media`。
 - YouTube Studio から手で上げることもできる。そのときは従来どおり `posted` で記録する。
 
+## D-016 2026-11-21 タブレットから上げるために、投稿待ちを MiniPC で受け渡す
+- ユーザーがタブレットの YouTube アプリから手で上げたいので、`upload/` の動画とタイトル・説明文・タグを LAN の MiniPC（`lenovo`、Ubuntu）に置き、タブレットのブラウザで動画を保存し、文をコピーできるようにした。Google ドライブは使わない（このPCにドライブのアプリがなく、API を足すと権限が増えるため）。
+- `python -m ai_shorts share` で送る。送るのは ssh だけ（`~/.ssh/config` の Host 名、`share.host`）。同じ大きさの動画は送り直さず、`upload/` にないもの（投稿済み・ボツ）は MiniPC から消す。
+- MiniPC の Web アプリ（`share_app/server.py`）は Python の標準ライブラリだけで書き、MiniPC に何も入れない。ほかのアプリと同じく `~/projects/ai-shorts-share` に置き、`systemd --user`（`ai-shorts-share.service`）でポート 8040 に出す。LAN 専用で、ログインはない。
+- タブレットで「上げた」を押すと MiniPC に印が残り、次の `share` で表示される。記録（`posted`）はこれまでどおりこのPCで行う（印だけで自動では記録しない。URL や公開日をユーザーに確かめるため）。
+- 投稿するかどうかは人が決めるまま（CLAUDE.md の2）。`share` は外部（YouTube）に何も送らない。
+
 ## 未決定
 - [ ] おふとんPの追加スタイル（ナレーション・どくはく・ホラーなど。1パック 1.39GB）を入れるか
 - [ ] 画像生成モデルとそのライセンス
