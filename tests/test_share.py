@@ -3,6 +3,7 @@ import importlib.util
 import json
 import subprocess
 import threading
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -79,12 +80,12 @@ class FakeSsh:
         return subprocess.CompletedProcess(cmd, 0, out, b"")
 
 
-def test_sync_sends_video_meta_and_reports_marks(tmp_path, capsys):
+def test_sync_sends_new_videos_and_meta_and_removes_gone(tmp_path):
     project = make_project(tmp_path)
     ready(project, "20261121-004", size=3)
     ready(project, "20261121-005", size=4)
-    fake = FakeSsh({"20261121-004": {"size": 3, "done": {"date": "2026-11-21"}},
-                    "20261120-001": {"size": 9, "done": None}})
+    fake = FakeSsh({"20261121-004": {"size": 3, "mark": None},
+                    "20261120-001": {"size": 9, "mark": None}})
     share.sync(project, MORNING, run=fake)
     remote_cmds = [c[-1] for c, _ in fake.calls]
     # 004 は同じ大きさなので動画は送らない。005 は送る。meta は両方
@@ -95,8 +96,45 @@ def test_sync_sends_video_meta_and_reports_marks(tmp_path, capsys):
     assert any(c[-1] == "20261120-001" for c, _ in fake.calls)
     meta = next(json.loads(i) for c, i in fake.calls if "20261121-005/meta.json" in c[-1])
     assert meta["title"] == "題"
+
+
+def history(project, state, sid):
+    return json.loads((project.root / "stories" / state / f"{sid}.json").read_text(encoding="utf-8"))["history"]
+
+
+def test_sync_records_posted_mark_and_removes_it_from_minipc(tmp_path):
+    project = make_project(tmp_path)
+    ready(project, "20261121-004")
+    fake = FakeSsh({"20261121-004": {"size": 3, "mark": {
+        "action": "posted", "date": "2026-11-22", "url": "https://youtube.com/shorts/abc"}}})
+    share.sync(project, MORNING, run=fake)
+    assert (project.root / "posted" / "20261121-004.mp4").exists()
+    assert history(project, "posted", "20261121-004")[-1] == {
+        "date": "2026-11-22", "event": "posted", "platform": "youtube", "url": "https://youtube.com/shorts/abc"}
+    assert any(c[-1] == "20261121-004" for c, _ in fake.calls)   # MiniPC から消す
+
+
+def test_sync_records_rejected_mark_with_idea(tmp_path):
+    project = make_project(tmp_path)
+    ready(project, "20261121-005")
+    fake = FakeSsh({"20261121-005": {"size": 3, "mark": {
+        "action": "rejected", "reason": "背景が暗い", "idea": "明るい写真にする", "remake": True}}})
+    share.sync(project, MORNING, run=fake)
+    assert (project.root / "rejected" / "20261121-005-1.mp4").exists()
+    h = history(project, "approved", "20261121-005")[-1]
+    assert (h["event"], h["reason"], h["idea"], h["next"]) == ("video_rejected", "背景が暗い", "明るい写真にする", "作り直す")
+
+
+def test_sync_keeps_rejected_mark_without_idea(tmp_path, capsys):
+    project = make_project(tmp_path)
+    ready(project, "20261121-006")
+    fake = FakeSsh({"20261121-006": {"size": 3, "mark": {
+        "action": "rejected", "reason": "オチが弱い", "idea": "", "remake": False}}})
+    share.sync(project, MORNING, run=fake)
+    assert (project.root / "upload" / "20261121-006.mp4").exists()
+    assert not any(c[-1] == "20261121-006" for c, _ in fake.calls)  # MiniPC に残す
     out = capsys.readouterr().out
-    assert "タブレットで「上げた」: 20261121-004（2026-11-21）" in out
+    assert "要対応 20261121-006" in out and "オチが弱い" in out and "--drop" in out
 
 
 def test_sync_reports_ssh_failure(tmp_path):
@@ -134,9 +172,23 @@ def test_parse_range():
 
 def test_render_page_escapes_text():
     page = server.render_page([{"id": "a", "title": "<b>題</b>", "description": "説明", "tags": [],
-                                "publish_at": "", "done": None, "size_mb": 1.0}])
+                                "publish_at": "", "mark": None, "size_mb": 1.0}])
     assert "&lt;b&gt;題&lt;/b&gt;" in page
     assert "<b>題</b>" not in page
+
+
+def test_validate_mark():
+    assert server.validate_mark({"action": None}) is None
+    assert server.validate_mark({"action": "posted", "date": "2026-11-22", "url": ""}) == {
+        "action": "posted", "date": "2026-11-22", "url": ""}
+    with pytest.raises(ValueError):
+        server.validate_mark({"action": "posted", "date": "あした"})
+    with pytest.raises(ValueError):
+        server.validate_mark({"action": "posted", "date": "2026-11-22", "url": "javascript:alert(1)"})
+    with pytest.raises(ValueError):
+        server.validate_mark({"action": "rejected", "reason": " "})
+    m = server.validate_mark({"action": "rejected", "reason": "暗い", "idea": "", "remake": False})
+    assert (m["reason"], m["idea"], m["remake"]) == ("暗い", "", False)
 
 
 @pytest.fixture
@@ -167,13 +219,29 @@ def test_server_lists_and_streams_ranges(running):
         assert len(r.read()) == 100
 
 
-def test_server_marks_done(running):
-    base, d = running
-    req = urllib.request.Request(base + "/api/done/20261121-004", data=b'{"done": true}', method="POST",
+def post_mark(base, body):
+    req = urllib.request.Request(base + "/api/mark/20261121-004", method="POST",
+                                 data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
                                  headers={"Content-Type": "application/json"})
-    urllib.request.urlopen(req)
-    assert json.loads((d / "done.json").read_text(encoding="utf-8"))["date"]
-    assert "上げた" in urllib.request.urlopen(base + "/").read().decode("utf-8")
-    req = urllib.request.Request(base + "/api/done/20261121-004", data=b'{"done": false}', method="POST")
-    urllib.request.urlopen(req)
-    assert not (d / "done.json").exists()
+    return urllib.request.urlopen(req)
+
+
+def test_server_marks_posted_rejected_and_clears(running):
+    base, d = running
+    post_mark(base, {"action": "posted", "date": "2026-11-22", "url": ""})
+    assert json.loads((d / "mark.json").read_text(encoding="utf-8"))["action"] == "posted"
+    page = urllib.request.urlopen(base + "/").read().decode("utf-8")
+    assert "投稿した 2026-11-22" in page and "取り消す" in page
+    post_mark(base, {"action": "rejected", "reason": "背景が暗い", "idea": "", "remake": True})
+    page = urllib.request.urlopen(base + "/").read().decode("utf-8")
+    assert "ボツ（作り直す）" in page and "背景が暗い" in page
+    post_mark(base, {"action": None})
+    assert not (d / "mark.json").exists()
+
+
+def test_server_rejects_bad_mark(running):
+    base, d = running
+    with pytest.raises(urllib.error.HTTPError) as e:
+        post_mark(base, {"action": "rejected", "reason": ""})
+    assert e.value.code == 400
+    assert not (d / "mark.json").exists()

@@ -5,7 +5,10 @@ Python の標準ライブラリだけで動く（MiniPC に何も入れなくて
 
     data/<id>/video.mp4
     data/<id>/meta.json   {"id", "title", "description", "tags", "publish_at", "voice"}
-    data/<id>/done.json   タブレットで「上げた」を押すと作られる {"date": "YYYY-MM-DD"}
+    data/<id>/mark.json   タブレットで「投稿した」「ボツ」を送ると作られる（取り消すと消える）
+        {"action": "posted", "date": "YYYY-MM-DD", "url": "..."}
+        {"action": "rejected", "reason": "...", "idea": "...", "remake": true}
+    次の `share` が mark.json を posted / reject-video の記録にして、data/<id> ごと消す。
 
     python3 server.py --port 8040 --data ~/projects/ai-shorts-share/data
 """
@@ -49,8 +52,8 @@ def load_items(data: Path) -> list[dict]:
         if not (meta_path.exists() and video.exists()):
             continue
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        done_path = d / "done.json"
-        meta["done"] = json.loads(done_path.read_text(encoding="utf-8")) if done_path.exists() else None
+        mark_path = d / "mark.json"
+        meta["mark"] = json.loads(mark_path.read_text(encoding="utf-8")) if mark_path.exists() else None
         meta["id"] = d.name
         meta["size_mb"] = round(video.stat().st_size / 1e6, 1)
         items.append(meta)
@@ -63,26 +66,70 @@ def _copy_block(label: str, text: str, key: str, rows: int) -> str:
             f'<textarea id="{key}" readonly rows="{rows}">{html.escape(text)}</textarea></div>')
 
 
+def mark_label(mark: dict | None) -> str:
+    if not mark:
+        return "投稿待ち"
+    if mark.get("action") == "posted":
+        return f"投稿した {mark.get('date', '')}"
+    return "ボツ（作り直す）" if mark.get("remake") else "ボツ（物語ごと）"
+
+
+def _forms(i: str, publish_date: str) -> str:
+    return f"""
+  <div class="row">
+    <button type="button" class="btn sub" data-open="p-{i}">投稿した</button>
+    <button type="button" class="btn sub" data-open="r-{i}">ボツ</button>
+  </div>
+  <form class="mark" id="p-{i}" data-id="{i}" data-action="posted" hidden>
+    <label>公開日（予約なら公開される日）<input type="date" name="date" required
+      value="{html.escape(publish_date)}" data-default-today="{'0' if publish_date else '1'}"></label>
+    <label>URL（あれば）<input type="url" name="url" placeholder="https://youtube.com/shorts/..."></label>
+    <div class="row"><button class="btn">投稿したと記録する</button>
+      <button type="button" class="btn sub" data-close="p-{i}">やめる</button></div>
+  </form>
+  <form class="mark" id="r-{i}" data-id="{i}" data-action="rejected" hidden>
+    <label>理由（何がだめだったか）<textarea name="reason" rows="2" required></textarea></label>
+    <label>改善案（次にどうするか。空なら Claude が案を出す）<textarea name="idea" rows="2"></textarea></label>
+    <div class="choice">
+      <label><input type="radio" name="remake" value="1" checked> 作り直す（物語は残す）</label>
+      <label><input type="radio" name="remake" value="0"> 物語ごとボツ</label></div>
+    <div class="row"><button class="btn">ボツにする</button>
+      <button type="button" class="btn sub" data-close="r-{i}">やめる</button></div>
+  </form>"""
+
+
+def _mark_summary(i: str, mark: dict) -> str:
+    if mark.get("action") == "posted":
+        detail = html.escape(mark.get("url") or "URL なし")
+    else:
+        detail = (f"理由：{html.escape(mark.get('reason', ''))}<br>"
+                  f"改善案：{html.escape(mark.get('idea') or '（空。Claude が案を出す）')}")
+    return f"""
+  <div class="summary">{detail}<div class="note">次の share でこのPCに記録され、ここから消えます。</div></div>
+  <div class="row"><button type="button" class="btn sub" data-clear="{i}">取り消す</button></div>"""
+
+
 def render_page(items: list[dict]) -> str:
     cards = []
     for it in items:
         i = html.escape(it["id"])
-        done = it.get("done")
+        mark = it.get("mark")
         when = ""
         if it.get("publish_at"):
             when = f'<div class="when">予約するなら <b>{html.escape(it["publish_at"])}</b></div>'
+        publish_date = (it.get("publish_at") or "")[:10]
         tags = ", ".join(it.get("tags") or [])
+        state = "" if not mark else (" posted" if mark.get("action") == "posted" else " rejected")
         cards.append(f"""
-<section class="card{' done' if done else ''}" id="c-{i}">
+<section class="card{state}" id="c-{i}">
   <div class="head"><span class="id">{i}</span>
-    <span class="badge">{'上げた ' + html.escape(done.get('date', '')) if done else '投稿待ち'}</span></div>
+    <span class="badge">{html.escape(mark_label(mark))}</span></div>
   <video src="v/{i}.mp4" controls playsinline preload="metadata"></video>
   <div class="row">
     <a class="btn" href="dl/{i}.mp4" download="{i}.mp4">動画を保存（{it['size_mb']} MB）</a>
-    <button type="button" class="btn sub" data-done="{i}" data-state="{'1' if done else '0'}">
-      {'「上げた」を取り消す' if done else '上げた'}</button>
   </div>
   {when}
+  {_mark_summary(i, mark) if mark else _forms(i, publish_date)}
   {_copy_block('タイトル', it.get('title', ''), f't-{i}', 1)}
   {_copy_block('説明文', it.get('description', ''), f'd-{i}', 8)}
   {_copy_block('タグ', tags, f'g-{i}', 1) if tags else ''}
@@ -105,11 +152,19 @@ header { padding:16px; display:flex; justify-content:space-between; align-items:
 h1 { font-size:20px; margin:0; }
 main { padding:0 16px 32px; display:grid; gap:16px; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); }
 .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
-.card.done { opacity:.6; }
 .head { display:flex; justify-content:space-between; margin-bottom:8px; }
 .id { font-family:ui-monospace, monospace; color:var(--muted); }
 .badge { font-size:13px; padding:0 8px; border-radius:99px; border:1px solid var(--line); }
-.done .badge { color:var(--ok); border-color:var(--ok); }
+.posted .badge { color:var(--ok); border-color:var(--ok); }
+.rejected .badge { color:var(--accent); border-color:var(--accent); }
+.posted video, .rejected video { opacity:.5; }
+form.mark { border:1px solid var(--line); border-radius:8px; padding:8px; margin:8px 0; }
+form.mark label { display:block; font-size:14px; color:var(--muted); margin-bottom:8px; }
+form.mark input[type=date], form.mark input[type=url] { width:100%; margin-top:4px; padding:8px; font-size:15px;
+  border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }
+.choice label { color:var(--fg) !important; }
+.summary { font-size:14px; border-left:3px solid var(--line); padding:4px 8px; margin:8px 0; word-break:break-all; }
+.note { color:var(--muted); font-size:13px; margin-top:4px; }
 video { width:100%; max-height:60vh; background:#000; border-radius:8px; aspect-ratio:9/16; }
 .row { display:flex; gap:8px; margin:8px 0; flex-wrap:wrap; }
 .btn { flex:1; text-align:center; padding:10px; border-radius:8px; border:0; font-size:15px;
@@ -141,11 +196,31 @@ document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', () =
                     () => { b.textContent = '選択したので手でコピー'; });
   setTimeout(() => { b.textContent = 'コピー'; b.classList.remove('ok'); }, 2000);
 }));
-document.querySelectorAll('[data-done]').forEach(b => b.addEventListener('click', async () => {
-  const on = b.dataset.state !== '1';
-  const r = await fetch('api/done/' + b.dataset.done, { method: 'POST',
-    headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ done: on }) });
-  if (r.ok) location.reload(); else alert('記録できませんでした');
+async function sendMark(id, body) {
+  const r = await fetch('api/mark/' + id, { method: 'POST',
+    headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (r.ok) location.reload(); else alert('送れませんでした：' + await r.text());
+}
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10); };
+document.querySelectorAll('[data-default-today="1"]').forEach(el => { el.value = today(); });
+document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
+  const card = b.closest('.card');
+  card.querySelectorAll('form.mark').forEach(f => { f.hidden = f.id !== b.dataset.open; });
+}));
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => {
+  document.getElementById(b.dataset.close).hidden = true;
+}));
+document.querySelectorAll('form.mark').forEach(f => f.addEventListener('submit', e => {
+  e.preventDefault();
+  const v = Object.fromEntries(new FormData(f));
+  const body = f.dataset.action === 'posted'
+    ? { action: 'posted', date: v.date, url: (v.url || '').trim() }
+    : { action: 'rejected', reason: v.reason.trim(), idea: (v.idea || '').trim(), remake: v.remake === '1' };
+  sendMark(f.dataset.id, body);
+}));
+document.querySelectorAll('[data-clear]').forEach(b => b.addEventListener('click', () => {
+  if (confirm('取り消しますか？')) sendMark(b.dataset.clear, { action: null });
 }));
 </script>
 </body></html>
@@ -211,21 +286,43 @@ class Handler(BaseHTTPRequestHandler):
     do_HEAD = do_GET
 
     def do_POST(self) -> None:
-        m = re.fullmatch(r"/api/done/([A-Za-z0-9_-]+)", self.path)
+        m = re.fullmatch(r"/api/mark/([A-Za-z0-9_-]+)", self.path)
         d = self.data / m[1] if m else None
         if not d or not d.is_dir():
             return self._send(404, b"not found", "text/plain")
         length = int(self.headers.get("Content-Length") or 0)
         try:
-            on = bool(json.loads(self.rfile.read(length) or b"{}").get("done"))
-        except (ValueError, AttributeError):
-            return self._send(400, b"bad request", "text/plain")
-        done = d / "done.json"
-        if on:
-            done.write_text(json.dumps({"date": dt.date.today().isoformat()}), encoding="utf-8")
+            body = json.loads(self.rfile.read(length) or b"{}")
+            mark = validate_mark(body)
+        except (ValueError, AttributeError) as e:
+            return self._send(400, str(e).encode("utf-8"), "text/plain; charset=utf-8")
+        path = d / "mark.json"
+        if mark is None:
+            path.unlink(missing_ok=True)
         else:
-            done.unlink(missing_ok=True)
+            path.write_text(json.dumps(mark, ensure_ascii=False), encoding="utf-8")
         self._send(200, b'{"ok":true}', "application/json")
+
+
+def validate_mark(body: dict) -> dict | None:
+    """タブレットから来た印を確かめて、mark.json の中身にする。action が空なら取り消し（None）。"""
+    action = body.get("action")
+    if not action:
+        return None
+    if action == "posted":
+        date = str(body.get("date", "")).strip()
+        dt.date.fromisoformat(date)  # 形が違えば ValueError
+        url = str(body.get("url", "")).strip()
+        if url and not url.startswith(("https://", "http://")):
+            raise ValueError("URL は https:// から書いてください")
+        return {"action": "posted", "date": date, "url": url}
+    if action == "rejected":
+        reason = str(body.get("reason", "")).strip()
+        if not reason:
+            raise ValueError("ボツの理由を書いてください")
+        return {"action": "rejected", "reason": reason, "idea": str(body.get("idea", "")).strip(),
+                "remake": bool(body.get("remake")), "date": dt.date.today().isoformat()}
+    raise ValueError(f"action が不明です: {action}")
 
 
 def make_server(port: int, data: Path) -> ThreadingHTTPServer:

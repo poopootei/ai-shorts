@@ -80,7 +80,8 @@
 - ユーザーがタブレットの YouTube アプリから手で上げたいので、`upload/` の動画とタイトル・説明文・タグを LAN の MiniPC（`lenovo`、Ubuntu）に置き、タブレットのブラウザで動画を保存し、文をコピーできるようにした。Google ドライブは使わない（このPCにドライブのアプリがなく、API を足すと権限が増えるため）。
 - `python -m ai_shorts share` で送る。送るのは ssh だけ（`~/.ssh/config` の Host 名、`share.host`）。同じ大きさの動画は送り直さず、`upload/` にないもの（投稿済み・ボツ）は MiniPC から消す。
 - MiniPC の Web アプリ（`share_app/server.py`）は Python の標準ライブラリだけで書き、MiniPC に何も入れない。ほかのアプリと同じく `~/projects/ai-shorts-share` に置き、`systemd --user`（`ai-shorts-share.service`）でポート 8040 に出す。LAN 専用で、ログインはない。
-- タブレットで「上げた」を押すと MiniPC に印が残り、次の `share` で表示される。記録（`posted`）はこれまでどおりこのPCで行う（印だけで自動では記録しない。URL や公開日をユーザーに確かめるため）。
+- タブレットで「投稿した」（公開日・URL）か「ボツ」（理由・改善案・作り直すか物語ごとか）を送ると MiniPC に印が残り、次の `share` がこのPCの記録（`posted` / `reject-video` と同じ）にして、MiniPC から消す。判断して入力するのはユーザーなので、人が決める方針と合う。`share` までは取り消せる。
+  - ボツで改善案が空のものは記録しない。`share` が「要対応」と出すので、Claude が改善案を出してユーザーに確かめ、`reject-video` で記録する（ボツの理由と改善案を必ず残す決まりのため）。
 - 投稿するかどうかは人が決めるまま（CLAUDE.md の2）。`share` は外部（YouTube）に何も送らない。
 
 ## 未決定
