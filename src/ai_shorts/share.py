@@ -4,6 +4,9 @@ MiniPC では share_app/server.py（標準ライブラリだけの Web アプリ
 送るのは ssh だけ（~/.ssh/config の Host 名）。scp は Windows でドライブ名を接続先と取り違えるので使わず、
 標準入力で流し込む。upload/ にないもの（投稿済み・ボツ）は MiniPC から消す。
 
+タブレットで「投稿した」「ボツ」を送ったもの（mark.json）は、送る前にこのPCの記録にする
+（posted / reject-video と同じ）。ボツで改善案が空のものは記録せず、残しておく（Claude が案を出して確かめる）。
+
     python -m ai_shorts share            # 送る（同じ大きさの動画は送り直さない）
     python -m ai_shorts share --install  # 初回・server.py を変えたとき：サーバーを置いて起動し直す
 """
@@ -17,7 +20,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable
 
-from . import upload
+from . import library, upload
 from .config import Project
 from .errors import AiShortsError, ConfigError
 
@@ -27,7 +30,7 @@ WEEKDAYS = "月火水木金土日"
 
 Runner = Callable[..., subprocess.CompletedProcess]
 
-# MiniPC で python3 - <remote_dir> として動かす。data/ の一覧（動画の大きさと「上げた」の印）を JSON で返す。
+# MiniPC で python3 - <remote_dir> として動かす。data/ の一覧（動画の大きさとタブレットの印）を JSON で返す。
 REMOTE_LIST = r"""
 import json, sys
 from pathlib import Path
@@ -36,9 +39,9 @@ data.mkdir(parents=True, exist_ok=True)
 out = {}
 for d in sorted(data.iterdir()):
     if d.is_dir():
-        v, done = d / "video.mp4", d / "done.json"
+        v, mark = d / "video.mp4", d / "mark.json"
         out[d.name] = {"size": v.stat().st_size if v.exists() else 0,
-                       "done": json.loads(done.read_text(encoding="utf-8")) if done.exists() else None}
+                       "mark": json.loads(mark.read_text(encoding="utf-8")) if mark.exists() else None}
 print(json.dumps(out))
 """
 
@@ -118,10 +121,38 @@ def _put(run: Runner, host: str, remote_path: str, data: bytes, timeout: int = 1
          data, timeout)
 
 
+def apply_marks(project: Project, remote: dict[str, dict]) -> list[str]:
+    """タブレットの印を記録にする。記録できなかったもの（改善案が空のボツ・エラー）の説明を返す。"""
+    pending = []
+    for story_id, info in remote.items():
+        mark = info.get("mark")
+        if not mark or not ID_RE.fullmatch(story_id):
+            continue
+        if not (project.root / "upload" / f"{story_id}.mp4").exists():
+            continue  # もう記録済み（このPCで手で記録した、など）。MiniPC からは消える
+        try:
+            if mark.get("action") == "posted":
+                library.record_post(project, story_id, "youtube", mark.get("url", ""), mark.get("date", ""))
+                log(f"{story_id}: タブレットで「投稿した」→ 記録した（公開日 {mark.get('date')}"
+                    f"{'、' + mark['url'] if mark.get('url') else '、URL なし'}）")
+            elif mark.get("action") == "rejected":
+                if not mark.get("idea"):
+                    pending.append(f"{story_id}: タブレットで「ボツ」（理由：{mark.get('reason')}）。"
+                                   "改善案が空なので記録していない → 案を出して reject-video で記録する"
+                                   f"（{'--remake' if mark.get('remake') else '--drop'}）")
+                    continue
+                library.reject_video(project, story_id, mark["reason"], mark["idea"], remake=bool(mark.get("remake")))
+                log(f"{story_id}: タブレットで「ボツ」→ 記録した（{'作り直す' if mark.get('remake') else '物語ごとボツ'}）")
+        except AiShortsError as e:
+            pending.append(f"{story_id}: 記録できませんでした: {e}")
+    return pending
+
+
 def sync(project: Project, now: dt.datetime | None = None, run: Runner = subprocess.run) -> None:
     host, remote_dir, _, url = _settings(project)
-    items = build_items(project, now or dt.datetime.now(dt.timezone.utc))
     remote = json.loads(_ssh(run, host, ["python3", "-", remote_dir], REMOTE_LIST.encode("utf-8")) or "{}")
+    pending = apply_marks(project, remote)
+    items = build_items(project, now or dt.datetime.now(dt.timezone.utc))
     local_sizes = {it["id"]: (project.root / "upload" / f"{it['id']}.mp4").stat().st_size for it in items}
     send, remove = plan_sync(local_sizes, remote)
     for it in items:
@@ -135,9 +166,8 @@ def sync(project: Project, now: dt.datetime | None = None, run: Runner = subproc
         _ssh(run, host, ["python3", "-", remote_dir, *remove], REMOTE_REMOVE.encode("utf-8"))
         log(f"upload/ にないので MiniPC から消した: {', '.join(remove)}")
     log(f"投稿待ち {len(items)} 本（動画を送ったもの {len(send)} 本）→ {url}")
-    marked = [(i, remote[i]["done"]) for i in local_sizes if remote.get(i, {}).get("done")]
-    for i, done in marked:
-        log(f"タブレットで「上げた」: {i}（{done.get('date', '')}）→ posted で記録する")
+    for p in pending:
+        log(f"要対応 {p}")
 
 
 def unit_file(remote_dir: str, port: int) -> str:

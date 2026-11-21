@@ -130,7 +130,9 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 タブレットから上げるとき（D-016）：
 1. `.venv\Scripts\python -m ai_shorts share` で `upload/` を MiniPC に送る（初回と `share_app/server.py` を変えたときは `--install` を付ける）。
 2. タブレットのブラウザで `share.url`（http://192.168.1.7:8040/）を開く。「動画を保存」で mp4 を保存し、YouTube アプリで上げる。タイトル・説明文は「コピー」で貼る。予約の日時の目安も出る（`youtube:` の設定があるとき）。
-3. 上げたら「上げた」を押しておく。次の `share` で「タブレットで「上げた」」と出るので、3-7 で `posted` の記録をする（URL と公開日はユーザーに聞く）。記録すると `upload/` から消え、次の `share` で MiniPC からも消える。
+3. 上げたら「投稿した」で公開日（予約なら公開される日）と URL を送る。見てやめるなら「ボツ」で理由・改善案・作り直すか物語ごとかを送る。次の `share` がこのPCの記録にして（`posted` / `reject-video` と同じ）、MiniPC から消す。`share` までは「取り消す」で戻せる。
+   - ボツで改善案が空なら記録されず、`share` が「要対応」と出す。改善案を決めて `reject-video` で記録する。
+   - 記録が増えるので、`share` のあとはコミットする。
 - 接続できないとき：MiniPC が起きているか、`ssh lenovo` が通るかを見る。ページが開かないときは MiniPC で `systemctl --user status ai-shorts-share`。
 - iPad の Safari では、保存した動画は「ファイル」に入る。YouTube アプリで選ぶには、共有メニューの「ビデオを保存」で写真に入れる。
 - BGM：方針は自作 BGM（`assets/bgm/`、[bgm.md](bgm.md)）。Studio のエディタ（「音声」）で後付けできるのは YouTube オーディオライブラリの曲だけで、自作曲の Content ID 収益にはつながらない。

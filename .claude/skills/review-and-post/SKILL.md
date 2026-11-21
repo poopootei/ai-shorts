@@ -44,7 +44,9 @@ stories/rejected（理由・改善案）                     rejected/{id}-{n}.m
 - 「タブレットで上げたい」「MiniPC に送って」と言われたら：`py -m ai_shorts share`（初回・`share_app/server.py` を変えたときは `--install`）。`upload/` の動画・タイトル・説明文が MiniPC に置かれ、`upload/` にないものは消える（D-016、runbook.md 3-6）。
 - 出力の URL（`share.url`）をユーザーに伝える。タブレットで動画を保存し、タイトル・説明文をコピーして YouTube アプリで上げてもらう。
 - `share` は YouTube に何も送らないので、投稿の了承は要らない。ただし動画CHECK に通ったもの（`upload/`）だけが対象。
-- 出力に「タブレットで「上げた」」があれば、その id は上げたということ。URL と公開日を聞いて、下の `posted` で記録する。記録したら、もう一度 `share` で MiniPC からも消す。
+- タブレットで「投稿した」「ボツ」を送ったものは、`share` が自動で記録する（`posted` / `reject-video` と同じ。出力に「記録した」と出る）。結果をユーザーに伝える。
+- 「要対応」が出たら対応する：改善案が空のボツは、理由から改善案を出してユーザーに確かめ、`reject-video <id> --reason "..." --idea "..." --remake`（または `--drop`。出力のとおり）で記録し、もう一度 `share`。
+- 記録が変わるので、ユーザーに頼まれたらコミットする。
 
 ## 投稿の記録（手で上げたとき）
 
