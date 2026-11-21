@@ -20,6 +20,36 @@ def test_atoms_hard_split_long_run():
     assert atoms("アイウエオカキクケコサシスセソタチ", 15) == ["アイウエオカキクケコサシスセソ", "タチ"]
 
 
+def test_atoms_do_not_break_after_small_tsu():
+    assert "引っ越して" in "|".join(atoms("うちのとなりに引っ越してきまして", 10)).split("|")[1]
+
+
+def test_atoms_keep_honorific_prefix_with_next_word():
+    assert atoms("迷子のお知らせ", 10) == ["迷子の", "お知らせ"]
+    assert atoms("一階でお待ちです", 10) == ["一階で", "お待ちです"]
+    assert atoms("「お世話になりました。", 10) == ["「お世話に", "なりました。"]
+
+
+def test_wrap_does_not_carry_on_past_period_then_break_mid_phrase():
+    lines = wrap("「天気は、西からやってくるでしょう。娘の町の今日が、この町の明日なんです」", 10)
+    assert "くるでしょう。" in lines
+    assert "娘の町の今日が、" in lines
+
+
+def test_atoms_split_long_hiragana_after_particle():
+    assert atoms("西からやってくるでしょう。", 10) == ["西からやって", "くるでしょう。"]
+
+
+def test_wrap_does_not_end_line_with_determiner():
+    lines = wrap("娘の町の今日が、この町の明日なんです」", 10)
+    assert all(not line.endswith("この") for line in lines)
+    assert all(len(line) <= 10 for line in lines)
+
+
+def test_wrap_does_not_start_line_with_lone_kanji():
+    assert wrap("しらがまじりの男の子。お母さまが、", 10) == ["しらがまじりの", "男の子。お母さまが、"]
+
+
 def test_wrap_respects_limit_and_prefers_punctuation():
     lines = wrap("それでも一口飲むと、ずっと言えなかった退職届を出す気になれた", 15)
     assert all(len(line) <= 15 for line in lines)
