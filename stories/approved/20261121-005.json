@@ -1,0 +1,31 @@
+{
+  "id": "20261121-005",
+  "title": "駅前の占い師",
+  "hook": "やっと来てくれた",
+  "body": "駅前の占い師は、私の顔を見るなり、泣き出しそうな顔で笑った。「やっと来てくれた」。夜の路地には、順番を待つ客が長い列を作っていた。\n彼女は水晶玉をのぞきこみ、ゆっくりと言った。「あなたは明日、占い師になります」。私はただの会社員だ。占いなんて、信じたこともない。笑ってお金を払い、家に帰った。振り返ると、彼女は深々と頭を下げていた。\n翌朝、目が覚めると、私は路地の小さな机の前に座っていた。手元には水晶玉、目の前には長い行列。最初の客が、おずおずと席についた。その顔を見たとたん、私の口が勝手に動いた。「やっと来てくれた」。",
+  "image_prompts": [
+    "a fortune teller table with a candle at night",
+    "a crystal ball on a dark table",
+    "a long line of people on a night street"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "不思議"
+  ],
+  "voice": "aida",
+  "approved": true,
+  "notes": "2026-11-21 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: fortune teller / crystal ball / night alley queue",
+  "history": [
+    {
+      "date": "2026-11-21",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}
