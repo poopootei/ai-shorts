@@ -126,6 +126,13 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 - 「ログインが切れています」と出たら `youtube-login` をやり直す。
 
 手で上げるとき：YouTube Studio で `upload/<id>.mp4` を上げ、説明欄に `upload/<id>.txt` を貼る。そのあと 3-7 で記録する。
+
+タブレットから上げるとき（D-016）：
+1. `.venv\Scripts\python -m ai_shorts share` で `upload/` を MiniPC に送る（初回と `share_app/server.py` を変えたときは `--install` を付ける）。
+2. タブレットのブラウザで `share.url`（http://192.168.1.7:8040/）を開く。「動画を保存」で mp4 を保存し、YouTube アプリで上げる。タイトル・説明文は「コピー」で貼る。予約の日時の目安も出る（`youtube:` の設定があるとき）。
+3. 上げたら「上げた」を押しておく。次の `share` で「タブレットで「上げた」」と出るので、3-7 で `posted` の記録をする（URL と公開日はユーザーに聞く）。記録すると `upload/` から消え、次の `share` で MiniPC からも消える。
+- 接続できないとき：MiniPC が起きているか、`ssh lenovo` が通るかを見る。ページが開かないときは MiniPC で `systemctl --user status ai-shorts-share`。
+- iPad の Safari では、保存した動画は「ファイル」に入る。YouTube アプリで選ぶには、共有メニューの「ビデオを保存」で写真に入れる。
 - BGM：方針は自作 BGM（`assets/bgm/`、[bgm.md](bgm.md)）。Studio のエディタ（「音声」）で後付けできるのは YouTube オーディオライブラリの曲だけで、自作曲の Content ID 収益にはつながらない。
 
 ### 3-7. 投稿の記録
@@ -179,4 +186,5 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 
 - 有料 API は使わない。外部への通信は、ダウンロード（エンジン・声・フォント）と Openverse の画像検索・取得だけ。
 - AivisSpeech は必ず `--disable_sentry` で起動する（エラー情報の外部送信を切る）。
+- `share` は LAN の MiniPC に ssh で送るだけで、インターネットには出ない（D-016）。
 - アプリ内ブラウザで YouTube Music などを開くと音が鳴ることがある。調べ終わったらタブを閉じる。
