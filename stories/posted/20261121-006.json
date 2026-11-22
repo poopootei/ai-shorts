@@ -26,6 +26,11 @@
       "date": "2026-11-21",
       "event": "video_approved",
       "note": "OK"
+    },
+    {
+      "date": "2026-11-22",
+      "event": "posted",
+      "platform": "youtube"
     }
   ]
 }

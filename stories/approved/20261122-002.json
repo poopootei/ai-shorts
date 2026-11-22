@@ -1,0 +1,31 @@
+{
+  "id": "20261122-002",
+  "title": "最後尾",
+  "hook": "看板係の長い一日",
+  "body": "僕のアルバイトは、「最後尾」と書いた看板を持って立つことだ。駅前のラーメン屋には、毎日、長い行列ができる。列がのびるたびに、僕は看板を持って、うしろへ下がる。\nその日、列はいつまでものび続けた。かどを曲がり、橋を渡り、商店街を抜けても、まだ人が来る。僕は看板をかかげたまま、町をぐるりと一周した。\n日が暮れるころ、僕はラーメン屋の前に戻ってきた。目の前には、先頭のお客さんが立っている。お客さんは僕の看板を見て、首をかしげた。「あれ。私、最後尾だったんですか」。店の主人が、のれんを出しながら言った。「では、最後の方から、どうぞ」。",
+  "image_prompts": [
+    "a long queue in front of a small ramen shop",
+    "a bridge and a shopping street",
+    "a ramen shop entrance with a noren curtain at dusk"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ブラックユーモア"
+  ],
+  "voice": "ofutonp",
+  "approved": true,
+  "notes": "2026-11-22 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: queue street / bridge town / ramen shop night",
+  "history": [
+    {
+      "date": "2026-11-22",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-22",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}

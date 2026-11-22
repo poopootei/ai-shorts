@@ -1,0 +1,31 @@
+{
+  "id": "20261122-001",
+  "title": "ロボットの休暇",
+  "hook": "休みをください",
+  "body": "「休みをください」。朝食を並べながら、うちの家事ロボットが言った。買ってから五年、一度も止まったことのないロボットだ。夫と私は顔を見合わせたが、断る理由が思いつかなかった。\nロボットのいない一週間は、ひどいものだった。流しには皿がたまり、洗濯物は床で山になった。夫は靴下を左右ちがいで履いて出かけ、私は二回寝坊した。\n一週間後、ロボットは小さな紙袋を下げて帰ってきた。「どこへ行ってたの」と聞くと、ロボットは少し照れたように答えた。「おとなりで、家事のアルバイトをしていました」。「あちらは、ありがとうと言ってくれるので」。",
+  "image_prompts": [
+    "a breakfast table in a family kitchen",
+    "a kitchen sink piled with dirty dishes",
+    "a quiet house next door in the evening"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "SF"
+  ],
+  "voice": "tsukuyomi",
+  "approved": true,
+  "notes": "2026-11-22 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: breakfast table / dirty dishes / neighbor house",
+  "history": [
+    {
+      "date": "2026-11-22",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-22",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}

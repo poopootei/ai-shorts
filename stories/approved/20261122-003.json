@@ -1,0 +1,31 @@
+{
+  "id": "20261122-003",
+  "title": "父のフィルム",
+  "hook": "背中ばかりの写真",
+  "body": "父の古いカメラに、撮りかけのフィルムが入ったままだった。無口な父は、写真が趣味だったことさえ、誰にも話さなかった。僕は近所の写真屋に、現像をたのんだ。\n出来上がった写真を見て、僕は首をかしげた。どれも、知らない誰かの背中ばかりだ。ランドセルの背中。制服の背中。大きな荷物を持って、駅へ向かう背中。\n写真屋の主人が、一枚ずつ並べながら言った。「ぜんぶ同じ人ですね。だんだん大きくなっていく」。最後の一枚は、駅の改札を抜けていく背中だった。見覚えのある、紺色のかばん。家を出たあの朝、父は見送りにも来なかったはずだった。",
+  "image_prompts": [
+    "an old film camera on a wooden table",
+    "old photographs spread on a table",
+    "a person walking away through a train station gate"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "しんみり"
+  ],
+  "voice": "aida",
+  "approved": true,
+  "notes": "2026-11-22 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: film camera / old photographs / station gate",
+  "history": [
+    {
+      "date": "2026-11-22",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-22",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}
