@@ -18,6 +18,7 @@ description: ai-shorts で朗読ショート動画を作る全体の流れ（物
 4. **背景**：pick-backgrounds スキルに従って、段落ごとに1枚を ID で取る。候補シートは自分で見て選び、外れ（広告・ロゴ・雰囲気違い）は除く。
 5. **合成**：`py -m ai_shorts all --id <id>`（複数なら id ごと）。止まったらエラーの文面どおりに直す（多いのは「長すぎる」→ 本文を短くしてユーザーに確認、「接続できない」→ エンジン起動）。
 6. **確認**：qa が全部 OK か見る。`py scripts/preview_video.py <id>` のコマ画像を自分で見て、字幕・背景・クレジットの崩れがないか確かめる。数字の検査だけで終わらせない（QA は見た目の違和感までは拾えない）。
+   - 字幕の切れ目も全部読む：`py -c "import json;d=json.load(open('work/<id>/subs.json',encoding='utf-8'));print(' / '.join('｜'.join(e['lines']) for e in d['events']))"`。言葉の途中（生き｜物）や2字だけの行（うまって｜いる）があれば `src/ai_shorts/subs.py` を直し、tests/test_subs.py に例を足してから `subs`・`render`・`qa` をやり直す。
 7. **動画CHECK を頼む**：`ready/<id>.mp4` をユーザーに送り（SendUserFile）、表で「タイトル・長さ・声」をまとめて、OK かボツかを聞く。説明文は `ready/<id>.txt`。
 8. **結果を記録する**：review-and-post スキルに従う。OK → `approve-video`（upload/ へ、投稿待ち）。ボツ → 理由と改善案を聞いて `reject-video`（作り直すなら `--remake`）。**Claude が自分で OK にしない。**
 9. **残っていることを伝える**：BGM なし、など。投稿はユーザーが「投稿して」と言ったときだけ、review-and-post スキルの手順で `upload` する（予定を見せて了承を得てから）。

@@ -23,7 +23,7 @@ stories/rejected（理由・改善案）                     rejected/{id}-{n}.m
 ## 動画CHECK（ユーザーが判断する）
 
 - `ready/<id>.mp4` を SendUserFile で渡し、スマホで見てもらう。**Claude が自分で OK にしない**（物語の承認と同じく、人の選別を通す方針。docs/policy.md）。
-- OK と言われたら：`py -m ai_shorts approve-video <id> [<id> ...] --note "ユーザーのコメント"` → `upload/` に移る（投稿待ち）。
+- OK と言われたら：`py -m ai_shorts approve-video <id> [<id> ...] --note "ユーザーのコメント"` → `upload/` に移る（投稿待ち）。続けて `share` で MiniPC に送り、URL を伝える（ユーザーはタブレットから上げている。D-016）。
 - ボツと言われたら、**理由と改善案をユーザーの言葉から聞き取って**記録する（聞いていなければ1回だけ聞く。改善案は Claude が案を出して確かめてもよい）。
   - 作り直す：`py -m ai_shorts reject-video <id> --reason "..." --idea "..." --remake` → 動画は `rejected/<id>-<n>.mp4`、物語は approved に残る。続けて直して（背景・config・本文）作り直す。本文を変えたら全文を見せて確認をもらう。
   - 物語ごとやめる：`... --drop` → 物語も `stories/rejected/` へ。
@@ -49,6 +49,9 @@ stories/rejected（理由・改善案）                     rejected/{id}-{n}.m
 - 記録が変わるので、ユーザーに頼まれたらコミットする。
 
 ## 投稿の記録（手で上げたとき）
+
+- 「投稿した」「投稿済みです」と言われたら、まず `share` を実行する（タブレットで「投稿した」が押してあれば、それで日付・URL つきで記録される）。
+- 押していなかったものは下の `posted` で記録し、もう一度 `share` で MiniPC から消す。日付を聞いていなければ今日で記録し、違えば直すと伝える。
 
 - 投稿待ちの動画は `upload/<id>.mp4`、説明欄に貼る文は `upload/<id>.txt`。必要なら txt の中身をそのまま見せる。
 - 「投稿した」と言われたら：`py -m ai_shorts posted <id> --platform youtube --url <URL> [--date 公開日]`
