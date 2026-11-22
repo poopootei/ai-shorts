@@ -57,10 +57,15 @@ def _is_kanji(c: str) -> bool:
 
 
 def _split_long(a: str, max_chars: int) -> list[str]:
-    """max_chars を超える単位を切る。行頭に来てはいけない字の前では切らず、ひらがなは助詞の後を選ぶ。"""
+    """max_chars を超える単位を切る。行頭に来てはいけない字の前では切らず、ひらがなは助詞の後を選ぶ。
+
+    助詞がなければ漢字 → ひらがなの切れ目（最後尾｜だったんですか）。どちらもなければ字数で切るが、
+    次の行がかっこ・句読点を除いて2字以下になる切り方（だったんです｜か」）は避ける。
+    """
     result: list[str] = []
     while len(a) > max_chars:
         ks = [k for k in range(1, max_chars + 1) if a[k] not in NO_LINE_START]
+        roomy = [k for k in ks if len(a[k:].rstrip(BREAK_AFTER)) > 2]
         k = 0
         for tier in SPLIT_AFTER_TIERS:
             good = [k for k in ks if k >= 2 and a[k - 1] in tier and _is_hiragana(a[k])]
@@ -68,7 +73,10 @@ def _split_long(a: str, max_chars: int) -> list[str]:
                 k = max(good)
                 break
         if not k:
-            k = max(ks) if ks else max_chars
+            good = [k for k in ks if _is_kanji(a[k - 1]) and _is_hiragana(a[k])]
+            k = max(good) if good else 0
+        if not k:
+            k = max(roomy or ks) if ks else max_chars
         result.append(a[:k])
         a = a[k:]
     result.append(a)
