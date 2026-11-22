@@ -26,8 +26,11 @@ NO_LINE_START = BREAK_AFTER + "ー" + SMALL_KANA + "ァィゥェォッャュョ�
 OPEN_QUOTES, CLOSE_QUOTES = "「『", "」』"
 # 漢字の前の「お」「ご」は接頭語として次の語に付ける（「迷子の｜お知らせ」「一階で｜お待ち」）。
 PREFIXES = "おご"
+# 送りがなの後に付いて一語になる漢字（生き物・話し方・置き場）。この前では切らない。
+COMPOUND_TAILS = "物方場"
+PARTICLES = "のがはをにでともへや"
 # 長いひらがなの続きを字数で切るときは、この字の後を選ぶ（前の組ほど優先。「やって｜くるでしょう」）。
-SPLIT_AFTER_TIERS = ("てを", "にがはとも")
+SPLIT_AFTER_TIERS = ("てを", "にがはとも", "で")
 DETERMINERS = ("この", "その", "あの", "どの")
 # 行の区切り方のコスト。行の余り字数 s に対して s + s²/max_chars（行が少なく、長さがそろうほど安い）に、次の罰を足す。
 # 句読点以外で切ると、1行増やすより高くつくようにしてある（「背を｜測り」より「、」で切る）。
@@ -60,23 +63,25 @@ def _split_long(a: str, max_chars: int) -> list[str]:
     """max_chars を超える単位を切る。行頭に来てはいけない字の前では切らず、ひらがなは助詞の後を選ぶ。
 
     助詞がなければ漢字 → ひらがなの切れ目（最後尾｜だったんですか）。どちらもなければ字数で切るが、
-    次の行がかっこ・句読点を除いて2字以下になる切り方（だったんです｜か」）は避ける。
+    どの切り方でも、次の行がかっこ・句読点を除いて2字以下になるもの（だったんです｜か」、
+    うまって｜いる）は、ほかに切れ目があれば避ける。
     """
     result: list[str] = []
     while len(a) > max_chars:
         ks = [k for k in range(1, max_chars + 1) if a[k] not in NO_LINE_START]
         roomy = [k for k in ks if len(a[k:].rstrip(BREAK_AFTER)) > 2]
+        cands = roomy or ks
         k = 0
         for tier in SPLIT_AFTER_TIERS:
-            good = [k for k in ks if k >= 2 and a[k - 1] in tier and _is_hiragana(a[k])]
+            good = [k for k in cands if k >= 2 and a[k - 1] in tier and _is_hiragana(a[k])]
             if good:
                 k = max(good)
                 break
         if not k:
-            good = [k for k in ks if _is_kanji(a[k - 1]) and _is_hiragana(a[k])]
+            good = [k for k in cands if _is_kanji(a[k - 1]) and _is_hiragana(a[k])]
             k = max(good) if good else 0
         if not k:
-            k = max(roomy or ks) if ks else max_chars
+            k = max(cands) if cands else max_chars
         result.append(a[:k])
         a = a[k:]
     result.append(a)
@@ -100,9 +105,12 @@ def atoms(text: str, max_chars: int) -> list[str]:
         after = text[i + 2] if i + 2 < len(text) else ""
         # 語の頭の「お」「ご」（「お世話」「迷子の｜お知らせ」）。ひらがなの続きの中の「お」は除く
         is_prefix = c in PREFIXES and _is_kanji(nxt) and (len(cur) == 1 or not _is_hiragana(cur[-2]))
+        # 漢字＋送りがな（1〜2字）＋「物」などは一語（生き物・落とし物）。助詞の後（犬が｜物を）は除く
+        is_compound = (nxt in COMPOUND_TAILS and c not in PARTICLES
+                       and any(_is_kanji(x) for x in cur[-3:-1]))
         boundary = (c in BREAK_AFTER and nxt not in BREAK_AFTER) or (
             # 「っ」の後（引っ越す）と接頭語の後（お知らせ）では切らない
-            _is_hiragana(c) and c not in SMALL_KANA and not is_prefix
+            _is_hiragana(c) and c not in SMALL_KANA and not is_prefix and not is_compound
             and not _is_hiragana(nxt) and nxt not in NO_LINE_START
         ) or (
             _is_hiragana(c) and nxt in PREFIXES and _is_kanji(after)

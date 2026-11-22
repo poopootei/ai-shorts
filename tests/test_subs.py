@@ -31,6 +31,12 @@ def test_atoms_keep_honorific_prefix_with_next_word():
     assert atoms("「お世話になりました。", 10) == ["「お世話に", "なりました。"]
 
 
+def test_atoms_keep_okurigana_compounds():
+    assert atoms("「この星の生き物を調べる」", 10) == ["「この", "星の", "生き物を", "調べる」"]
+    assert atoms("落とし物を拾った", 10) == ["落とし物を", "拾った"]
+    assert atoms("犬が物を運ぶ", 10) == ["犬が", "物を", "運ぶ"]
+
+
 def test_wrap_does_not_carry_on_past_period_then_break_mid_phrase():
     lines = wrap("「天気は、西からやってくるでしょう。娘の町の今日が、この町の明日なんです」", 10)
     assert "くるでしょう。" in lines
@@ -43,6 +49,10 @@ def test_atoms_split_long_hiragana_after_particle():
 
 def test_atoms_split_long_at_kanji_to_hiragana_without_particle():
     assert atoms("最後尾だったんですか」", 10) == ["最後尾", "だったんですか」"]
+
+
+def test_atoms_particle_split_does_not_leave_tiny_tail():
+    assert atoms("半年先までうまっている", 10) == ["半年先まで", "うまっている"]
 
 
 def test_atoms_hard_split_does_not_leave_tiny_tail():
