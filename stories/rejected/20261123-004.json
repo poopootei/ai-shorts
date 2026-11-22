@@ -1,0 +1,29 @@
+{
+  "id": "20261123-004",
+  "title": "妻の時計",
+  "hook": "どれだけ進んでいるのか",
+  "body": "僕には、ひどい遅刻ぐせがあった。部屋の時計を五分進めても、だめだった。進んでいると知っているから、そのぶん、のんびりしてしまうのだ。\n見かねた妻が、ある日言った。「これからは、私がこっそり時計を進めておく。どれだけ進めたかは、教えない」。その日から、僕の朝は変わった。五分かもしれないし、三十分かもしれない。時計を見るたびに、あわてて家を飛び出した。おかげで遅刻は、一度もしなくなった。\nそれから三十年がたった。定年の日の朝、妻は時計を見上げて、笑って言った。「あの時計ね、あの日から、ずっとぴったり合っていたのよ」。",
+  "image_prompts": [
+    "a wall clock in a small room in the morning",
+    "a man running to the station in the morning",
+    "an old couple at home with a wall clock"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "日常",
+    "ほっこり"
+  ],
+  "voice": "ofutonp_aseri",
+  "approved": false,
+  "notes": "Claude Code で生成（ボツの 20261123-001 の代わり）。背景の検索語の候補: wall clock / running commuter / old couple home",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_rejected",
+      "reason": "普通すぎて面白くない。意外性もない（ユーザー）",
+      "idea": "オチが予想の延長（いい話・種明かし）にならないようにする。聞き手に一度「こうなるだろう」と思わせてから、その逆か、もう一段ずれた結末にする",
+      "from": "draft"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "20261123-003",
+  "title": "謝りの名人",
+  "hook": "半年待ちの謝り方",
+  "body": "私の仕事は、人の代わりに謝ることだ。遅刻した人の代わりに上司へ、約束を破った人の代わりに恋人へ、深く頭を下げる。声の高さも、話す速さも、相手に合わせて変える。どんなに怒っている人も、私が謝れば三分で静まる。おかげで予約は、半年先までうまっている。\nある日、事務所に一通の依頼が届いた。依頼人の欄には、妻の名前があった。謝る相手は、妻本人。謝ってほしいことは、結婚して十年分の、夫の態度だった。\nその晩、私は自分の家の玄関で、妻に深く頭を下げた。妻は、三分では許してくれなかった。料金は、私のお小遣いから引かれた。",
+  "image_prompts": [
+    "a man in a suit bowing deeply",
+    "an envelope on an office desk",
+    "the entrance hall of a Japanese house at night"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ブラックユーモア"
+  ],
+  "voice": "ofutonp_kanashimi",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の検索語の候補: bowing businessman / letter desk office / genkan entrance / 2026-11-23 ユーザーの方針（声は COEIROINK だけ）で声を aida → ofutonp_kanashimi に変更",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}

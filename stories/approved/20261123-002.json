@@ -1,0 +1,32 @@
+{
+  "id": "20261123-002",
+  "title": "片方の靴下",
+  "hook": "洗濯機の向こうから",
+  "body": "うちの洗濯機は、靴下を片方だけ食べる。回すたびに、一枚ずつ消えてしまうのだ。ある夜、私は靴下の中にメモを入れて、洗濯機を回した。「返してください」。\n翌朝、洗濯機の底に、見たことのない靴下が一枚あった。中には、小さな字の返事が入っていた。「こちらは冬が長いので、助かっています。お礼に、編んだものを送ります」。それから、私たちの文通が始まった。\n春になったころ、届いた返事には、こう書いてあった。「子どもが生まれました。今度は、両方そろえてもらえませんか」。私は次の日、赤ちゃん用の小さな靴下を買ってきて、洗濯機に入れた。",
+  "image_prompts": [
+    "a washing machine in a small room at night",
+    "a hand-knitted wool sock",
+    "a pair of tiny baby socks"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "日常の不思議",
+    "ほっこり"
+  ],
+  "voice": "tsukuyomi",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の検索語の候補: washing machine / knitted sock / baby socks",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}
