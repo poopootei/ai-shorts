@@ -17,7 +17,8 @@ def test_atoms_do_not_start_line_with_small_kana_or_long_vowel():
 
 
 def test_atoms_hard_split_long_run():
-    assert atoms("アイウエオカキクケコサシスセソタチ", 15) == ["アイウエオカキクケコサシスセソ", "タチ"]
+    # 2字だけ次の行に回さない（「タチ」→「ソタチ」）
+    assert atoms("アイウエオカキクケコサシスセソタチ", 15) == ["アイウエオカキクケコサシスセ", "ソタチ"]
 
 
 def test_atoms_do_not_break_after_small_tsu():
@@ -38,6 +39,14 @@ def test_wrap_does_not_carry_on_past_period_then_break_mid_phrase():
 
 def test_atoms_split_long_hiragana_after_particle():
     assert atoms("西からやってくるでしょう。", 10) == ["西からやって", "くるでしょう。"]
+
+
+def test_atoms_split_long_at_kanji_to_hiragana_without_particle():
+    assert atoms("最後尾だったんですか」", 10) == ["最後尾", "だったんですか」"]
+
+
+def test_atoms_hard_split_does_not_leave_tiny_tail():
+    assert atoms("アイウエオカキクケコサ」", 10) == ["アイウエオカキク", "ケコサ」"]
 
 
 def test_wrap_does_not_end_line_with_determiner():
