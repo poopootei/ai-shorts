@@ -24,6 +24,7 @@ class Story:
     approved: bool = False
     notes: str = ""
     voice: str = ""  # config.yaml の voices のキー。空なら tts.default_voice
+    source: str = ""  # 出典（青空文庫の作品など）。あれば説明文に「出典：」で出す
 
     @property
     def paragraphs(self) -> list[str]:

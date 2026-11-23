@@ -10,13 +10,14 @@ approved: true にし、notes の先頭に「YYYY-MM-DD ユーザーが承認」
 from __future__ import annotations
 
 import argparse
+import os
 import datetime as dt
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()  # チャンネルごとの作業場所（channels/{name}/）
 
 
 def main() -> None:
@@ -43,7 +44,7 @@ def main() -> None:
             {"date": dt.date.today().isoformat(), "event": "story_approved", "note": args.note})
         dst.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         # 検査に通らなければ元に戻す
-        rc = subprocess.run([sys.executable, str(ROOT / "scripts" / "check_story.py"), str(dst)]).returncode
+        rc = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "check_story.py"), str(dst)]).returncode
         if rc != 0:
             dst.unlink()
             sys.exit(f"{sid} は検査で NG があったので承認していません（draft のまま）。")

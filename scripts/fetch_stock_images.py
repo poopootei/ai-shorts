@@ -13,6 +13,7 @@ CC0 / PDM だけを使うので、商用利用でき、クレジット表記は�
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import subprocess
 import sys
@@ -106,7 +107,7 @@ def main() -> None:
     ap.add_argument("--height", type=int, default=1920)
     args = ap.parse_args()
 
-    root = Path(__file__).resolve().parents[1]
+    root = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()
     work = root / "work" / args.id
     work.mkdir(parents=True, exist_ok=True)
     skips = args.skip or [0] * len(args.query)

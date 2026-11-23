@@ -9,11 +9,12 @@
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import subprocess
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()  # チャンネルごとの作業場所（channels/{name}/）
 
 
 def main() -> None:

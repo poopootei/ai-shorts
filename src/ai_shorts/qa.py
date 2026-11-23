@@ -34,6 +34,8 @@ def describe(story: Story, credit: str, images: dict | None) -> str:
     lines = [story.title, "", story.hook, ""]
     if story.tags:
         lines += [" ".join(f"#{t}" for t in story.tags), ""]
+    if story.source:
+        lines.append(f"出典：{story.source}")
     lines.append(f"声：{credit}")
     if images and images.get("images"):
         sources = sorted({i.get("source") or "?" for i in images["images"]})

@@ -76,3 +76,12 @@ def test_image_boundaries_use_paragraph_gaps():
     timing = {"paragraphs": [{"start": 1.0, "end": 10.0}, {"start": 10.8, "end": 20.0},
                              {"start": 20.8, "end": 30.0}]}
     assert image_boundaries(timing, 3, 31.0) == [10.4, 20.4]
+
+
+def test_rel_to_root_reaches_shared_assets_from_channel(tmp_path):
+    from ai_shorts.config import Project
+    from ai_shorts.render import rel_to_root
+    root = tmp_path / "channels" / "aozora"
+    project = Project(root=root, config={})
+    assert rel_to_root(project, root / "work" / "x" / "subs.ass") == "work/x/subs.ass"
+    assert rel_to_root(project, tmp_path / "assets" / "fonts") == "../../assets/fonts"

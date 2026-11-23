@@ -11,12 +11,13 @@ NG が1つでもあれば終了コード 1。
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()  # チャンネルごとの作業場所（channels/{name}/）
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from ai_shorts import userdict, voices  # noqa: E402
 from ai_shorts.config import load_project  # noqa: E402

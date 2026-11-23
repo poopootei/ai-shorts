@@ -46,7 +46,8 @@ class Project:
 
     def path(self, rel: str | Path) -> Path:
         p = Path(rel)
-        return p if p.is_absolute() else self.root / p
+        # channels/{name}/ から共通の assets を ../../assets/... で指せるように、.. を解決する
+        return p if p.is_absolute() else (self.root / p).resolve()
 
     def work_dir(self, story_id: str) -> Path:
         d = self.root / "work" / story_id

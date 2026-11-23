@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import os
 import warnings
 from pathlib import Path
 
@@ -23,6 +24,12 @@ MIX_SAMPLE_RATE = 48000
 
 def log(msg: str) -> None:
     print(f"[render] {msg}")
+
+
+def rel_to_root(project: Project, p: Path) -> str:
+    """ffmpeg は root で実行し、パスは root からの相対で渡す（drawtext / subtitles の Windows パス対策）。
+    channels/{name}/ から共通の assets を指すときは ../../assets/... になる。"""
+    return Path(os.path.relpath(p, project.root)).as_posix()
 
 
 # ---- 音声 ----------------------------------------------------------------
@@ -179,8 +186,8 @@ def credit_filter(project: Project, work: Path) -> str | None:
         return None
     text_file = work / "credit.txt"
     text_file.write_text(credit, encoding="utf-8")
-    rel_text = text_file.relative_to(project.root).as_posix()
-    rel_font = font.relative_to(project.root).as_posix()
+    rel_text = rel_to_root(project, text_file)
+    rel_font = rel_to_root(project, font)
     size = int(project.get("render.credit_font_size", 28))
     margin = int(project.get("render.credit_margin", 40))
     y_ratio = float(project.get("render.credit_y_ratio", 0.06))
@@ -197,8 +204,8 @@ def subs_filter(project: Project, work: Path) -> str | None:
         log("subs.ass がないので、字幕なしで作ります。")
         return None
     font = project.path(project.get("subs.font_file"))
-    rel_ass = ass.relative_to(project.root).as_posix()
-    rel_fonts = font.parent.relative_to(project.root).as_posix()
+    rel_ass = rel_to_root(project, ass)
+    rel_fonts = rel_to_root(project, font.parent)
     return f"subtitles=filename={rel_ass}:fontsdir={rel_fonts}"
 
 
@@ -223,9 +230,8 @@ def run(project: Project, story_id: str) -> None:
             f"音声が {duration:.2f} 秒で、上限 {max_seconds} 秒を超えています。tts を見直してください。"
         )
 
-    # ffmpeg は root で実行し、パスは root からの相対で渡す（drawtext / subtitles の Windows パス対策）
     def rel(p: Path) -> str:
-        return p.relative_to(project.root).as_posix()
+        return rel_to_root(project, p)
 
     images = find_images(work)
     if images:

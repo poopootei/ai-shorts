@@ -53,3 +53,10 @@ def test_description_uses_voice_credit():
     s = Story(id="x", title="題", hook="引き", body="本文", tags=["朗読"])
     text = describe(s, "COEIROINK:おふとんP", None)
     assert "声：COEIROINK:おふとんP" in text and "#朗読" in text
+    assert "出典" not in text
+
+
+def test_description_shows_source():
+    s = Story(id="x", title="題", hook="引き", body="本文", source="芥川龍之介『蜘蛛の糸』（青空文庫）")
+    text = describe(s, "COEIROINK:おふとんP", None)
+    assert "出典：芥川龍之介『蜘蛛の糸』（青空文庫）" in text
