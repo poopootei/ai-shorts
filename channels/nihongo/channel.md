@@ -1,6 +1,6 @@
 # 「物語で学ぶ日本語」チャンネル（海外の日本語学習者向け）
 
-方針は docs/decisions.md の D-022〜D-025。ここはチャンネルの名前・ロゴ・説明文など（docs/channel.md の、このチャンネル版）。
+方針は docs/decisions.md の D-022〜D-025。ここはチャンネルの名前・ロゴ・説明文など（channels/shortshort/channel.md の、このチャンネル版）。
 
 ## 基本情報
 

@@ -189,13 +189,13 @@ def test_run_stops_without_video_id(project):
 
 
 def test_cli_requires_ids_or_all(project, monkeypatch, capsys):
-    monkeypatch.setattr("ai_shorts.cli.load_project", lambda: project)
+    monkeypatch.setattr("ai_shorts.cli.load_project", lambda **kw: project)
     assert main(["upload"]) == 1
     assert "--all" in capsys.readouterr().err
 
 
 def test_cli_all_dry_run(project, monkeypatch, capsys):
-    monkeypatch.setattr("ai_shorts.cli.load_project", lambda: project)
+    monkeypatch.setattr("ai_shorts.cli.load_project", lambda **kw: project)
     ready_to_post(project, "20261120-002", "20261120-001")
     assert main(["upload", "--all", "--dry-run", "--start", "2030-01-01"]) == 0
     out = capsys.readouterr().out

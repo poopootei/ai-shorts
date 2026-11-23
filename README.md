@@ -1,8 +1,16 @@
 # ai-shorts
 
-YouTube チャンネル「[ショートショートの世界へ](https://www.youtube.com/@ショートショートの世界へ)」の運用全般（動画づくりとチャンネルのマネジメント）を扱うリポジトリ。チャンネルの情報は [docs/channel.md](docs/channel.md)。
+複数の YouTube チャンネルの運用全般（動画づくりとチャンネルのマネジメント）を扱うリポジトリ。
 
-中心は、AIで書いたショートショートを音声合成（COEIROINK / AivisSpeech）で朗読し、縦型ショート動画（YouTube Shorts / Instagram Reels）にするローカル制作パイプライン。
+中心は、AI で書いた物語を音声合成（COEIROINK / AivisSpeech）で読み上げ、縦型ショート動画（YouTube Shorts / Instagram Reels）にするローカル制作パイプライン。コードと素材（声・辞書・フォント・BGM）は共通で、物語・動画・設定はチャンネルごとに `channels/<ch>/` に置く。
+
+| `<ch>` | チャンネル | 状態 | 情報 |
+|---|---|---|---|
+| `shortshort` | [ショートショートの世界へ](https://www.youtube.com/@ショートショートの世界へ)（約1分の朗読ショートショート） | 運用中 | [channel.md](channels/shortshort/channel.md) |
+| `nihongo` | 物語で学ぶ日本語（海外の日本語学習者向け。1文のレッスン） | 試作中 | [channel.md](channels/nihongo/channel.md) |
+| `aozora` | 青空文庫の紹介（日本向け） | 休止 | – |
+
+コマンドとスクリプトには `-c <ch>`（`--channel <ch>`）を付けて、どのチャンネルの作業かを選ぶ。
 
 - **すべてローカル・無料**（有料APIは使わない）
 - **投稿は頼んだときだけ**。動画CHECK に通ったものを `upload` で予約投稿し、投稿したことを記録する（YouTube Data API、権限は投稿だけ）
@@ -30,6 +38,7 @@ Claude Code では `.claude/skills/` のスキル（`make-shorts` ほか）が�
 ## 処理の流れ
 
 ```
+（パスはすべて channels/<ch>/ の中）
 stories/draft/*.json      ← Claude Code セッションで物語を生成
       │  検査 → approve_story.py（Claude。物語CHECK はしない）
 stories/approved/*.json
@@ -62,7 +71,7 @@ posted/{id}.mp4           ← 投稿済みの原本。物語は stories/posted/
 python -m venv .venv
 .venv\Scripts\activate               # macOS / Linux は source .venv/bin/activate
 pip install -e ".[dev]"              # src/ai_shorts をパッケージとして入れる（pytest つき）
-cp config.example.yaml config.yaml   # 声・BGM・フォントなどを設定
+cp channels/shortshort/config.example.yaml channels/shortshort/config.yaml   # チャンネルごとに、声・BGM・フォントなどを設定
 pytest                               # 単体テスト（音声合成エンジン・ffmpeg なしで動く）
 ```
 
@@ -85,26 +94,26 @@ pytest                               # 単体テスト（音声合成エンジ�
 
 ```bash
 # 背景画像（ComfyUI ができるまでの仮）：段落ごとに検索語を1つ。CC0 / パブリックドメインだけを使う
-python scripts/fetch_stock_images.py --id <story_id> --query "..." --query "..." --query "..."
+python scripts/fetch_stock_images.py -c <ch> --id <story_id> --query "..." --query "..." --query "..."
 
-python -m ai_shorts tts     --id <story_id>   # 声 → work/{id}/voice.wav, timing.json
-python -m ai_shorts subs    --id <story_id>   # 字幕 → subs.ass, subs.json
-python -m ai_shorts render  --id <story_id>   # 合成 → video.mp4
-python -m ai_shorts qa      --id <story_id>   # 検査 → 合格なら ready/{id}.mp4 と ready/{id}.txt（説明文）
-python -m ai_shorts all     --id <story_id>   # 上の4つを順に実行
-python -m ai_shorts all     --approved        # 承認済みでまだ動画がない物語をまとめて処理
+python -m ai_shorts -c <ch> tts     --id <story_id>   # 声 → work/{id}/voice.wav, timing.json
+python -m ai_shorts -c <ch> subs    --id <story_id>   # 字幕 → subs.ass, subs.json
+python -m ai_shorts -c <ch> render  --id <story_id>   # 合成 → video.mp4
+python -m ai_shorts -c <ch> qa      --id <story_id>   # 検査 → 合格なら ready/{id}.mp4 と ready/{id}.txt（説明文）
+python -m ai_shorts -c <ch> all     --id <story_id>   # 上の4つを順に実行
+python -m ai_shorts -c <ch> all     --approved        # 承認済みでまだ動画がない物語をまとめて処理
 
 # 状態の管理（CHECK・投稿・ボツ）
-python -m ai_shorts status                       # 状態ごとの一覧
-python -m ai_shorts ideas                        # ボツの理由と改善案
-python -m ai_shorts approve-video <id>           # 動画CHECK OK → upload/
-python -m ai_shorts reject-video  <id> --reason "..." --idea "..." --remake   # 作り直す（--drop で物語ごとボツ）
-python -m ai_shorts upload        --all --dry-run   # 公開の予定を見る（id を並べてもよい。1 日 1 本）
-python -m ai_shorts upload        --all             # YouTube に予約投稿して記録 → posted/
-python -m ai_shorts youtube-login                   # YouTube にログイン（初回・切れたとき）
-python -m ai_shorts posted        <id> --platform youtube --url <URL>        # 手で投稿した → posted/
-python -m ai_shorts reject-story  <id> --reason "..." --idea "..."           # 書いた物語をやめる
-python -m ai_shorts revive-story  <id>           # ボツの物語を直すため draft に戻す
+python -m ai_shorts -c <ch> status                       # 状態ごとの一覧
+python -m ai_shorts -c <ch> ideas                        # ボツの理由と改善案
+python -m ai_shorts -c <ch> approve-video <id>           # 動画CHECK OK → upload/
+python -m ai_shorts -c <ch> reject-video  <id> --reason "..." --idea "..." --remake   # 作り直す（--drop で物語ごとボツ）
+python -m ai_shorts -c <ch> upload        --all --dry-run   # 公開の予定を見る（id を並べてもよい。1 日 1 本）
+python -m ai_shorts -c <ch> upload        --all             # YouTube に予約投稿して記録 → posted/
+python -m ai_shorts -c <ch> youtube-login                   # YouTube にログイン（初回・切れたとき）
+python -m ai_shorts -c <ch> posted        <id> --platform youtube --url <URL>        # 手で投稿した → posted/
+python -m ai_shorts -c <ch> reject-story  <id> --reason "..." --idea "..."           # 書いた物語をやめる
+python -m ai_shorts -c <ch> revive-story  <id>           # ボツの物語を直すため draft に戻す
 ```
 
 - 背景は `work/{id}/img_1.png 〜 img_N.png`。段落の数と同じなら段落の境目で切り替え、なければ単色。出典とライセンスは `work/{id}/images.json`。
@@ -117,7 +126,6 @@ python -m ai_shorts revive-story  <id>           # ボツの物語を直すた�
 ai-shorts/
 ├── CLAUDE.md              Claude Code 向けの指示
 ├── README.md
-├── config.example.yaml
 ├── requirements.txt
 ├── docs/
 │   ├── policy.md          収益化・権利・プラットフォーム規約の方針
@@ -127,19 +135,25 @@ ai-shorts/
 │   ├── channel-ideas.md   新しいチャンネルの案（中身・いいところ・懸念点）
 │   ├── overseas-report.md 海外向けの狙い所（ジャンル・人気・競合の比較）
 │   └── decisions.md       決定事項の記録
-├── stories/
-│   ├── draft/             生成直後（検査待ち）
-│   ├── approved/          検査済み（動画づくり〜投稿待ち）
-│   ├── posted/            投稿済み
-│   └── rejected/          ボツ（理由・改善案つき）
-├── work/{id}/             中間ファイル（git 管理外）
-├── ready/                 QA 合格・動画CHECK待ち（ここから下の mp4 は git 管理外）
-├── upload/                動画CHECK 済み・投稿待ち
-├── posted/                投稿済みの原本
-├── rejected/              ボツ動画
+├── channels/
+│   └── <ch>/              チャンネルごと（shortshort / nihongo / aozora）
+│       ├── channel.md         名前・説明文・競合など
+│       ├── config.example.yaml / config.yaml（git 管理外）
+│       ├── secrets/           YouTube の認証情報（git 管理外）
+│       ├── stories/
+│       │   ├── draft/         生成直後（検査待ち）
+│       │   ├── approved/      検査済み（動画づくり〜投稿待ち）
+│       │   ├── posted/        投稿済み
+│       │   └── rejected/      ボツ（理由・改善案つき）
+│       ├── work/{id}/         中間ファイル（git 管理外）
+│       ├── ready/             QA 合格・動画CHECK待ち（ここから下の mp4 は git 管理外）
+│       ├── upload/            動画CHECK 済み・投稿待ち
+│       ├── posted/            投稿済みの原本
+│       └── rejected/          ボツ動画
 ├── assets/
 │   ├── bgm/               自作BGM
 │   ├── fonts/
+│   ├── tts/               読みの辞書（全チャンネル共通）
 │   └── styles/            画像生成用のスタイル指定
 ├── src/ai_shorts/         パイプラインのコード
 ├── scripts/               単発のツール

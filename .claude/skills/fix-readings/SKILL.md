@@ -5,11 +5,13 @@ description: ai-shorts の読み上げの読み間違い・アクセントの誤
 
 # 読みを直す
 
-Python は `.venv\Scripts\python`（以下 `py`）。エンジンが動いている必要がある（`py scripts/tts_status.py`）。
+`<ch>` はチャンネル名（CLAUDE.md の「チャンネル」）。`stories/`・`work/`・`upload/`・`config.yaml` などのパスは、チャンネルのフォルダ `channels/<ch>/` から見たもの。
+
+Python は `.venv\Scripts\python`（以下 `py`）。エンジンが動いている必要がある（`py scripts/tts_status.py -c <ch>`）。
 
 ## 手順
 
-1. 読みを出す：`py scripts/check_story.py <id> --readings`
+1. 読みを出す：`py scripts/check_story.py -c <ch> <id> --readings`
    - 物語の声のエンジンで読む。COEIROINK はひらがな、AivisSpeech / VOICEVOX はカタカナ（`'` がアクセント位置。平板も最後のモーラに `'` が付くので、それだけでは誤りではない）。
    - ユーザーの指摘がある語を探し、ほかにも誤りがないか全文を見る。
 2. 辞書に足す：`assets/tts/user_dict.yaml`
@@ -21,7 +23,7 @@ Python は `.venv\Scripts\python`（以下 `py`）。エンジンが動いてい
 ```
 
 3. もう一度 1 を実行して直ったか確かめる（辞書は check_story / tts のたびにエンジンへ反映される）。
-4. 動画に反映：`py -m ai_shorts all --id <id>`（読みが変わると長さも変わるので tts からやり直す）。
+4. 動画に反映：`py -m ai_shorts -c <ch> all --id <id>`（読みが変わると長さも変わるので tts からやり直す）。
 
 ## 辞書で直らないとき
 

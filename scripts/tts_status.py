@@ -1,6 +1,6 @@
 """音声合成エンジンが動いているか、config の声がエンジンに入っているかを確かめる。
 
-    python scripts/tts_status.py
+    python scripts/tts_status.py --channel shortshort
 
 止まっているエンジンは scripts/start_tts.ps1 で起動する（COEIROINK と AivisSpeech）。
 """
@@ -14,7 +14,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from ai_shorts.config import load_project  # noqa: E402
+from ai_shorts.config import load_project, script_root  # noqa: E402
 
 
 def styles(engine_type: str, url: str) -> dict[int, str] | None:
@@ -29,7 +29,7 @@ def styles(engine_type: str, url: str) -> dict[int, str] | None:
 
 
 def main() -> None:
-    project = load_project(ROOT)
+    project = load_project(script_root())
     engines = project.get("engines")
     found = {name: styles(e["type"], e["url"]) for name, e in engines.items()}
     for name, e in engines.items():

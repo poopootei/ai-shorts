@@ -1,17 +1,33 @@
 # CLAUDE.md
 
-このリポジトリは、YouTube チャンネル「[ショートショートの世界へ](https://www.youtube.com/@ショートショートの世界へ)」の運用全般を扱う。AIで書いたショートショートの朗読ショート動画を作るローカルパイプラインが中心だが、チャンネルのマネジメント（説明文・プロフィール・投稿の方針と記録・分析の振り返りなど）もここで扱う。概要は README.md、方針は docs/ にある。作業前に関係する docs を読むこと。
+このリポジトリは、複数の YouTube チャンネルの運用全般を扱う。AI で書いた物語を音声合成で読み上げる縦型ショート動画のローカルパイプラインが中心で、チャンネルのマネジメント（説明文・プロフィール・投稿の方針と記録・分析の振り返りなど）もここで扱う。コード・声・辞書・フォント・BGM はチャンネルで共通、物語・動画・設定はチャンネルごと。概要は README.md、方針は docs/ にある。作業前に関係する docs を読むこと。
+
+## チャンネル
+
+チャンネルは `channels/<ch>/` に1つずつ置く（docs/decisions.md D-019、D-026）。
+
+| `<ch>` | チャンネル | 状態 |
+|---|---|---|
+| `shortshort` | [ショートショートの世界へ](https://www.youtube.com/@ショートショートの世界へ)（約1分の朗読ショートショート） | 運用中 |
+| `nihongo` | 物語で学ぶ日本語（海外の日本語学習者向け。レッスン形式） | 試作中（D-022） |
+| `aozora` | 青空文庫の紹介（日本向け） | 休止（D-021） |
+
+- コマンドとスクリプトには、必ず `-c <ch>`（`--channel <ch>`）を付ける。例：`python -m ai_shorts -c shortshort status`、`python scripts/check_story.py -c nihongo <id>`。
+- `stories/`・`work/`・`ready/`・`upload/`・`posted/`・`rejected/`・`config.yaml`・`secrets/` は、どれも `channels/<ch>/` の中にある。docs やスキルでこれらのパスを書くときは、チャンネルのフォルダから見たもの。
+- どのチャンネルの話か分からないときは、ユーザーに聞く。チャンネルをまたいでファイルを動かさない。
+- 共通のもの：`src/`、`scripts/`、`assets/`（フォント・BGM・辞書 `assets/tts/user_dict.yaml`）、`tools/`（音声合成エンジン）。辞書を直すと全チャンネルに効く。
 
 ## チャンネル運用
 
-- チャンネルの情報（名前・URL・説明文・クレジットの載せ方・運用の方針）は [docs/channel.md](docs/channel.md) にまとめる。説明文などを変えたら、ここも更新する。
+- チャンネルの情報（名前・URL・説明文・クレジットの載せ方・運用の方針）は `channels/<ch>/channel.md` にまとめる。説明文などを変えたら、ここも更新する。
 - Claude は案を作り、記録を残すところまで。YouTube Studio での設定の変更は、ユーザーが手で行う。投稿は、ユーザーが頼んだときに `upload` で予約投稿する（下の 2）。
 - 声を足したら、チャンネル説明文のクレジットも見直す。
+- 新しいチャンネルの案は docs/channel-ideas.md。始めると決めたら `channels/<ch>/` を作り、上の表に足す。
 
 ## 絶対に守ること
 
 1. **有料APIを使わない。** LLM、TTS、画像生成はすべてローカルか Claude Code セッション内で済ませる。外部へのHTTP通信が必要な新しい依存を足す前に、ユーザーに確認する。
-2. **投稿はユーザーが頼んだときだけ。** 動画CHECK に通った `upload/` の動画を、ユーザーが「投稿して」と言ったときに `python -m ai_shorts upload` で予約投稿する。先に `--dry-run` で公開の予定を見せて了承を得る。定期実行などで勝手に投稿する仕組みは作らない。YouTube Data API で使う権限は `youtube.upload` だけ（docs/decisions.md D-015）。
+2. **投稿はユーザーが頼んだときだけ。** 動画CHECK に通った `upload/` の動画を、ユーザーが「投稿して」と言ったときに `python -m ai_shorts -c <ch> upload` で予約投稿する。先に `--dry-run` で公開の予定を見せて了承を得る。定期実行などで勝手に投稿する仕組みは作らない。YouTube Data API で使う権限は `youtube.upload` だけ（docs/decisions.md D-015）。
 3. **動画は59秒以下。** Content ID の申し立てが付いた1分超のショートはブロックされる。QA でここを必ず検査する。
 4. **BGM の作曲を Claude がしない。** メロディ・和音・構成はユーザーが決めたもの（MIDI）を使う。Claude が作ってよいのはシンセエンジン（音色、エンベロープ、エフェクト）とレンダリングのコードだけ。生成AI楽曲は TuneCore Japan の Content ID に登録できないため（docs/bgm.md）。
 5. **第三者の音源素材を BGM に入れない。** ループ、サンプルパック、SoundFont、効果音素材は使わない。音は numpy で合成して WAV に直接書き出す。
@@ -20,7 +36,7 @@
 
 ## コードの方針
 
-- Python 3.11 以上、パッケージは `src/ai_shorts/`。CLI は `python -m ai_shorts <stage>`。
+- Python 3.11 以上、パッケージは `src/ai_shorts/`。CLI は `python -m ai_shorts -c <ch> <stage>`。
 - 工程（tts / images / subs / render / qa）は独立したモジュールにし、入出力は `work/{id}/` 内のファイルだけでつなぐ。どの工程からでも再実行できるようにする。
 - 設定値はコードに直接書かず `config.yaml` から読む。
 - 外部ツール（COEIROINK・AivisSpeech などの音声合成エンジン、ComfyUI、ffmpeg）を呼ぶ部分は薄いラッパーにまとめ、接続できないときは分かりやすいエラーで止める。
@@ -52,10 +68,13 @@ Claude Code では、依頼に合うスキル（`.claude/skills/`）を使って
 
 ## 用語
 
-- **物語 (story)**: 250〜280字のショートショート。`stories/*/{id}.json`
+下のパスは `channels/<ch>/` から見たもの。
+
+
+- **物語 (story)**: 1本分の台本。`channels/<ch>/stories/*/{id}.json`。shortshort では 250〜280字のショートショート、nihongo では1文のレッスン（字数などの決まりは config の `story.*`）
 - **work/{id}/**: 1本分の中間ファイル置き場
 - **ready/**: QA に合格し、動画CHECK（人）を待つもの
 - **upload/**: 動画CHECK に合格し、投稿を待つもの（ユーザーが頼んだら `upload` で予約投稿）
 - **posted/**: 投稿済みの原本。物語は `stories/posted/`
 - **ボツ**: 物語は `stories/rejected/`、動画は `rejected/{id}-{n}.mp4`。理由と改善案を物語 JSON の `history` に必ず残す
-- **流れ**: 物語（Claude が書いて検査）→ 動画 → 動画CHECK（人）→ 投稿（人が頼んで `upload`）。状態は `python -m ai_shorts status`、改善案は `python -m ai_shorts ideas`（docs/runbook.md 3）
+- **流れ**: 物語（Claude が書いて検査）→ 動画 → 動画CHECK（人）→ 投稿（人が頼んで `upload`）。状態は `python -m ai_shorts -c <ch> status`、改善案は `python -m ai_shorts -c <ch> ideas`（docs/runbook.md 3）

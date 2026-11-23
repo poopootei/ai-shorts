@@ -5,11 +5,13 @@ description: ai-shorts の朗読用ショートショート（250〜280字）を
 
 # 物語を書く・承認する
 
+`<ch>` はチャンネル名（CLAUDE.md の「チャンネル」）。`stories/`・`work/`・`upload/`・`config.yaml` などのパスは、チャンネルのフォルダ `channels/<ch>/` から見たもの。
+
 書き方の決まりは `docs/story-guidelines.md`（必ず読む）。Python は `.venv\Scripts\python`（以下 `py`）。
 
 ## 書く
 
-0. `py -m ai_shorts ideas` で、これまでのボツの理由と改善案を読む。同じ理由でボツになりそうな筋・書き方を避ける。
+0. `py -m ai_shorts -c <ch> ideas` で、これまでのボツの理由と改善案を読む。同じ理由でボツになりそうな筋・書き方を避ける。
 1. ジャンルを散らす（SF・日常の不思議・ブラックユーモア・ほっこり など）。既存作品の筋やオチを借りない、作家名で「〜風」にしない。
 2. 形：冒頭の1文で「おかしい」と思わせる → 状況 → ひねり → 最後の1文でオチ。登場人物は1〜2人、固有名詞は少なく。
    - オチは予想の延長（いい話・種明かし）にしない。聞き手に一度「こうなるだろう」と思わせてから、その逆か、もう一段ずれた結末にする（「妻の時計」は「普通すぎて意外性がない」でボツ）。
@@ -22,7 +24,7 @@ description: ai-shorts の朗読用ショートショート（250〜280字）を
    - `image_prompts` は段落の数だけ。`notes` に背景の検索語の候補（英語の短い語）を書く。
    - `"voice"` に雰囲気に合う声を `config.yaml` の `voices` から選ぶ（COEIROINK だけ。D-017。男性の語り手なら ofutonp とそのスタイル違い ofutonp_kanashimi / ofutonp_yorokobi、女性なら tsukuyomi。話ごとに散らす。ofutonp_aseri は聞き取りにくいので選ばない）。
    - `"approved": false`。
-5. 検査：`py scripts/check_story.py stories/draft/<id>.json --readings`（エンジンが止まっていたら `--readings` なしで、あとで読みを確かめる）
+5. 検査：`py scripts/check_story.py -c <ch> <id> --readings`（エンジンが止まっていたら `--readings` なしで、あとで読みを確かめる）
    - NG は直す。字数は 250〜280 字に入れる（足りない・多いときは文を足し引きする）。
    - 読み間違いは fix-readings スキルで辞書に足す。辞書で直らないものは文を書き換える。
 
@@ -30,14 +32,14 @@ description: ai-shorts の朗読用ショートショート（250〜280字）を
 
 - 人の確認は動画CHECK だけ（D-018）。物語の全文をユーザーに見せて承認を待たない。
 - 承認する前に、`docs/story-guidelines.md` の「書いたあとに確かめる点」を自分で見る（オチが予想どおりでないか、前提と人物が食い違わないか、既存の有名作品に似すぎていないか、不快な表現・実在の人物や団体への言及がないか）。だめなら直すか書き直す。
-- `py scripts/approve_story.py <id> [<id> ...] [--note "直した点"]`
+- `py scripts/approve_story.py -c <ch> <id> [<id> ...] [--note "直した点"]`
   - 検査で NG があると承認されず draft に残る（エラーを直してやり直す）。
 - 承認したら、make-shorts の手順で動画まで作る。物語だけ頼まれたときは、タイトルと一行の筋を表で伝える。
 
 ## ボツになったら
 
-- 理由と改善案をユーザーの言葉で聞き取り、`py -m ai_shorts reject-story <id> --reason "..." --idea "..."` で `stories/rejected/` に移す（消さない。改善案としてためる）。
-- ボツの話を直すときは `py -m ai_shorts revive-story <id>` で draft に戻してから直し、検査して承認し直す。
+- 理由と改善案をユーザーの言葉で聞き取り、`py -m ai_shorts -c <ch> reject-story <id> --reason "..." --idea "..."` で `stories/rejected/` に移す（消さない。改善案としてためる）。
+- ボツの話を直すときは `py -m ai_shorts -c <ch> revive-story <id>` で draft に戻してから直し、検査して承認し直す。
 
 ## 人の確認はどこで入るか
 

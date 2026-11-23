@@ -5,19 +5,21 @@ description: ai-shorts で朗読ショート動画を作る全体の流れ（物
 
 # 朗読ショートを作る
 
+`<ch>` はチャンネル名（CLAUDE.md の「チャンネル」）。`stories/`・`work/`・`upload/`・`config.yaml` などのパスは、チャンネルのフォルダ `channels/<ch>/` から見たもの。
+
 手順の詳細と根拠は `docs/runbook.md`。ここは Claude が実行するときの段取り。
 作業のルートは `D:\prj\ai-shorts`、Python は `.venv\Scripts\python`（以下 `py`）。
 
 ## 段取り
 
 1. **計画を立てる**：何本・どんなジャンルか、既存の物語を使うか新しく書くかを依頼から決める。曖昧なら本数とジャンルの希望だけ聞く。
-   - `py -m ai_shorts status` で、作りかけ（動画づくり待ち・QA NG）や CHECK 待ちが残っていないか見る。
-   - `py -m ai_shorts ideas` で、これまでのボツの理由と改善案を読み、同じ失敗を避ける。
-2. **エンジンを確かめる**：`py scripts/tts_status.py`。止まっていれば起動する（runbook 2）。セッションをまたぐと止まっているのが普通。
+   - `py -m ai_shorts -c <ch> status` で、作りかけ（動画づくり待ち・QA NG）や CHECK 待ちが残っていないか見る。
+   - `py -m ai_shorts -c <ch> ideas` で、これまでのボツの理由と改善案を読み、同じ失敗を避ける。
+2. **エンジンを確かめる**：`py scripts/tts_status.py -c <ch>`。止まっていれば起動する（runbook 2）。セッションをまたぐと止まっているのが普通。
 3. **物語**：新しく書くなら write-stories スキルに従って下書き → 検査 → 自分で確認点を見て直す → `approve_story.py` で承認し、そのまま背景・合成へ進む。物語CHECK はしない（D-018）。全文をユーザーに見せて待たない。
 4. **背景**：pick-backgrounds スキルに従って、段落ごとに1枚を ID で取る。候補シートは自分で見て選び、外れ（広告・ロゴ・雰囲気違い）は除く。
-5. **合成**：`py -m ai_shorts all --id <id>`（複数なら id ごと）。止まったらエラーの文面どおりに直す（多いのは「長すぎる」→ 本文を短くしてユーザーに確認、「接続できない」→ エンジン起動）。
-6. **確認**：qa が全部 OK か見る。`py scripts/preview_video.py <id>` のコマ画像を自分で見て、字幕・背景・クレジットの崩れがないか確かめる。数字の検査だけで終わらせない（QA は見た目の違和感までは拾えない）。
+5. **合成**：`py -m ai_shorts -c <ch> all --id <id>`（複数なら id ごと）。止まったらエラーの文面どおりに直す（多いのは「長すぎる」→ 本文を短くしてユーザーに確認、「接続できない」→ エンジン起動）。
+6. **確認**：qa が全部 OK か見る。`py scripts/preview_video.py -c <ch> <id>` のコマ画像を自分で見て、字幕・背景・クレジットの崩れがないか確かめる。数字の検査だけで終わらせない（QA は見た目の違和感までは拾えない）。
    - 字幕の切れ目も全部読む：`py -c "import json;d=json.load(open('work/<id>/subs.json',encoding='utf-8'));print(' / '.join('｜'.join(e['lines']) for e in d['events']))"`。言葉の途中（生き｜物）や2字だけの行（うまって｜いる）があれば `src/ai_shorts/subs.py` を直し、tests/test_subs.py に例を足してから `subs`・`render`・`qa` をやり直す。
 7. **動画CHECK を頼む**：`ready/<id>.mp4` をユーザーに送り（SendUserFile）、表で「タイトル・長さ・声」をまとめて、OK かボツかを聞く。説明文は `ready/<id>.txt`。
 8. **結果を記録する**：review-and-post スキルに従う。OK → `approve-video`（upload/ へ、投稿待ち）。ボツ → 理由と改善案を聞いて `reject-video`（作り直すなら `--remake`）。**Claude が自分で OK にしない。**

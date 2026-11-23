@@ -13,7 +13,6 @@ CC0 / PDM だけを使うので、商用利用でき、クレジット表記は�
 from __future__ import annotations
 
 import argparse
-import os
 import json
 import subprocess
 import sys
@@ -22,6 +21,9 @@ import time
 from pathlib import Path
 
 import requests
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from ai_shorts.config import add_channel_arg, script_root  # noqa: E402
 
 API = "https://api.openverse.org/v1/images/"
 HEADERS = {"User-Agent": "ai-shorts/0.1 (local video pipeline)"}
@@ -99,6 +101,7 @@ def to_portrait_png(src: Path, dst: Path, width: int, height: int) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_channel_arg(ap)
     ap.add_argument("--id", required=True)
     ap.add_argument("--query", action="append", required=True, help="段落ごとの検索語（英語）")
     ap.add_argument("--skip", type=int, action="append",
@@ -107,7 +110,7 @@ def main() -> None:
     ap.add_argument("--height", type=int, default=1920)
     args = ap.parse_args()
 
-    root = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()
+    root = script_root()  # チャンネルのフォルダ（channels/{name}/）
     work = root / "work" / args.id
     work.mkdir(parents=True, exist_ok=True)
     skips = args.skip or [0] * len(args.query)

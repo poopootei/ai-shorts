@@ -11,13 +11,14 @@ NG が1つでもあれば終了コード 1。
 from __future__ import annotations
 
 import argparse
-import os
 import json
 import sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()  # チャンネルごとの作業場所（channels/{name}/）
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from ai_shorts.config import add_channel_arg, script_root  # noqa: E402
+
+ROOT = script_root()  # チャンネルのフォルダ（channels/{name}/）。--channel で選ぶ
 
 from ai_shorts import ruby, userdict, voices  # noqa: E402
 from ai_shorts.config import load_project  # noqa: E402
@@ -141,6 +142,7 @@ def check(path: Path, project, readings: bool) -> int:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_channel_arg(ap)
     ap.add_argument("stories", nargs="+", help="物語の id か JSON のパス")
     ap.add_argument("--readings", action="store_true", help="声のエンジンで読みを出す")
     args = ap.parse_args()

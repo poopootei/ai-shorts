@@ -16,6 +16,8 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 
 作業のルートは `D:\prj\ai-shorts`。コマンドはすべてここで実行する。Python は `.venv\Scripts\python`。
 
+**チャンネル**：`<ch>` はチャンネル名（`shortshort` / `nihongo` / `aozora`。CLAUDE.md の「チャンネル」）。`python -m ai_shorts` とスクリプトには `-c <ch>` を付ける。この文書の `stories/`・`work/`・`upload/`・`config.yaml` などのパスは、`channels/<ch>/` から見たもの。
+
 ---
 
 ## 1. 環境を作る（新しい PC・作り直し）
@@ -25,7 +27,7 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 | 手順 | コマンド | 大きさ |
 |---|---|---|
 | Python の環境 | `python -m venv .venv` → `.venv\Scripts\python -m pip install -e ".[dev]"` | 数十 MB |
-| 設定 | `copy config.example.yaml config.yaml` | – |
+| 設定 | チャンネルごとに `copy channels\<ch>\config.example.yaml channels\<ch>\config.yaml` | – |
 | ffmpeg | `winget install Gyan.FFmpeg`（libass・drawtext つきの full build） | 約 200MB |
 | COEIROINK | `.venv\Scripts\python scripts\setup_tools.py coeiroink` | 約 592MB（展開後 1.4GB） |
 | AivisSpeech | `.venv\Scripts\python scripts\setup_tools.py aivisspeech` | 約 217MB（＋初回起動時に約 900MB） |
@@ -61,8 +63,8 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 | 投稿済み | `stories/posted/` | `posted/` | – |
 | ボツ | `stories/rejected/` | `rejected/<id>-<n>.mp4` | 改善案として残す |
 
-- いまの状態：`.venv\Scripts\python -m ai_shorts status`
-- ボツの理由と改善案：`.venv\Scripts\python -m ai_shorts ideas`。**物語を書く前と動画を作る前に読む。**
+- いまの状態：`.venv\Scripts\python -m ai_shorts -c <ch> status`
+- ボツの理由と改善案：`.venv\Scripts\python -m ai_shorts -c <ch> ideas`。**物語を書く前と動画を作る前に読む。**
 - 経緯は物語 JSON の `history`（承認・ボツ・投稿の日付と内容）。git で残る。
 
 ### 3-1. 物語を書く（Claude Code セッション内）
@@ -75,7 +77,7 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 ### 3-2. 承認（Claude。物語CHECK はしない）
 - 人の確認は動画CHECK だけ（decisions.md D-018）。Claude が story-guidelines.md の確認点を見て直し、検査に通ったら承認する。
 - `.venv\Scripts\python scripts\approve_story.py <id> [<id> ...]`（検査に NG があると承認されず draft に残る）
-- 書いてみてやめる物語は：`.venv\Scripts\python -m ai_shorts reject-story <id> --reason "理由" --idea "改善案"` → `stories/rejected/`。
+- 書いてみてやめる物語は：`.venv\Scripts\python -m ai_shorts -c <ch> reject-story <id> --reason "理由" --idea "改善案"` → `stories/rejected/`。
   - 動画CHECK で物語ごとボツになったら `reject-video <id> ... --drop`（3-5）。直して出し直すときは `revive-story <id>` で draft に戻す。
 
 ### 3-3. 背景画像（ComfyUI ができるまでの仮。D-008）
@@ -87,7 +89,7 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
    - 出典とライセンスは `work/<id>/images.json` に残る。
 
 ### 3-4. 合成
-- `.venv\Scripts\python -m ai_shorts all --id <id>`（tts → subs → render → qa）
+- `.venv\Scripts\python -m ai_shorts -c <ch> all --id <id>`（tts → subs → render → qa）
   - 一部だけやり直すとき：`subs` / `render` / `qa` を個別に。字幕や画像を変えただけなら tts は不要。
   - 「上限を超えています」で止まったら本文を短くする（話速は `speed_max` まで自動で上がる）。
 
@@ -95,8 +97,8 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 - `qa` の全項目が OK で `ready/<id>.mp4` と `ready/<id>.txt`（説明文）ができる。
 - 見た目：`.venv\Scripts\python scripts\preview_video.py <id>` → `work/<id>/preview.png`（hook・各段落・最後のコマ）。字幕の読みやすさは `--crop`。
 - ユーザーに動画を渡す。字幕の大きさ・BGM の音量などの判断は、ユーザーがスマホで見て決める（数値は `config.yaml`）。
-- OK なら：`.venv\Scripts\python -m ai_shorts approve-video <id> --note "コメント"` → `upload/`（投稿待ち）。**Claude が自分で OK にしない。**
-- ボツなら：`.venv\Scripts\python -m ai_shorts reject-video <id> --reason "理由" --idea "改善案" --remake`
+- OK なら：`.venv\Scripts\python -m ai_shorts -c <ch> approve-video <id> --note "コメント"` → `upload/`（投稿待ち）。**Claude が自分で OK にしない。**
+- ボツなら：`.venv\Scripts\python -m ai_shorts -c <ch> reject-video <id> --reason "理由" --idea "改善案" --remake`
   - 動画は `rejected/<id>-<n>.mp4` に残る（n は何回目のボツか）。`--remake` は物語を approved に残して作り直す。`--drop` は物語ごとボツ。
 
 ### 3-6. 投稿（予約投稿）
@@ -108,10 +110,10 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 3. OAuth クライアント ID を作る（種類は「デスクトップ アプリ」）。JSON をダウンロードして `secrets/youtube_client_secret.json` に置く（`secrets/` は git 管理外）。
 4. `config.example.yaml` の `youtube:` を `config.yaml` にコピーし、公開時刻（`publish_time`）などを決める。
 5. `.venv\Scripts\python -m pip install -r requirements.txt`
-6. `.venv\Scripts\python -m ai_shorts youtube-login` → ブラウザでチャンネルの Google アカウントを選ぶ。「Google はこのアプリを確認していません」と出たら「詳細」→「（アプリ名）に移動」。`secrets/youtube_token.json` ができる。
+6. `.venv\Scripts\python -m ai_shorts -c <ch> youtube-login` → ブラウザでチャンネルの Google アカウントを選ぶ。「Google はこのアプリを確認していません」と出たら「詳細」→「（アプリ名）に移動」。`secrets/youtube_token.json` ができる。
 
 投稿するとき：
-- まず予定を見せる：`.venv\Scripts\python -m ai_shorts upload --all --dry-run`（id を並べてもよい。公開はその順に 1 日 1 本）。外部には何も送らない。
+- まず予定を見せる：`.venv\Scripts\python -m ai_shorts -c <ch> upload --all --dry-run`（id を並べてもよい。公開はその順に 1 日 1 本）。外部には何も送らない。
 - 了承をもらったら `--dry-run` を外して実行する。1 本ずつ上げて、`posted` の記録（URL・公開日）まで行う。途中で止まったら、残りは `upload/` に残る（記録したものが二重に上がることはない）。
 - 公開日は、これまでの YouTube の公開日（`stories/posted/` の history）の翌日から。早くても今から `min_lead_minutes` 先の枠。`--start YYYY-MM-DD` で決めてもよい。
 - 上げたら YouTube Studio で、予約の日時と、ショートとして扱われているかを確かめる。Studio で公開日を変えたら、`stories/posted/<id>.json` の history の date も直す。
@@ -127,7 +129,7 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 手で上げるとき：YouTube Studio で `upload/<id>.mp4` を上げ、説明欄に `upload/<id>.txt` を貼る。そのあと 3-7 で記録する。
 
 タブレットから上げるとき（D-016）：
-1. `.venv\Scripts\python -m ai_shorts share` で `upload/` を MiniPC に送る（初回と `share_app/server.py` を変えたときは `--install` を付ける）。
+1. `.venv\Scripts\python -m ai_shorts -c <ch> share` で `upload/` を MiniPC に送る（初回と `share_app/server.py` を変えたときは `--install` を付ける）。
 2. タブレットのブラウザで `share.url`（http://192.168.1.7:8040/）を開く。「動画を保存」で mp4 を保存し、YouTube アプリで上げる。タイトル・説明文は「コピー」で貼る。予約の日時の目安も出る（`youtube:` の設定があるとき）。
 3. 上げたら「投稿した」で公開日（予約なら公開される日）と URL を送る。見てやめるなら「ボツ」で理由・改善案・作り直すか物語ごとかを送る。次の `share` がこのPCの記録にして（`posted` / `reject-video` と同じ）、MiniPC から消す。`share` までは「取り消す」で戻せる。
    - ボツで改善案が空なら記録されず、`share` が「要対応」と出す。改善案を決めて `reject-video` で記録する。
@@ -137,7 +139,7 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 - BGM：方針は自作 BGM（`assets/bgm/`、[bgm.md](bgm.md)）。Studio のエディタ（「音声」）で後付けできるのは YouTube オーディオライブラリの曲だけで、自作曲の Content ID 収益にはつながらない。
 
 ### 3-7. 投稿の記録
-- `upload` で上げたものは記録済み。手で上げたとき・ほかの場所に上げたときは：`.venv\Scripts\python -m ai_shorts posted <id> --platform youtube --url <URL> [--date 公開日]`
+- `upload` で上げたものは記録済み。手で上げたとき・ほかの場所に上げたときは：`.venv\Scripts\python -m ai_shorts -c <ch> posted <id> --platform youtube --url <URL> [--date 公開日]`
   - mp4・txt は `posted/` へ、物語は `stories/posted/` へ移る。予約投稿なら `--date` は公開日。
   - ほかの場所にも上げたら、`--platform instagram` などでもう一度実行（記録が足されるだけ）。
 - `posted/`・`rejected/` の mp4 は git に入らない。消すとき・バックアップはユーザーが決める。

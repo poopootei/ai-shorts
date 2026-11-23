@@ -2,7 +2,7 @@
 
 tts:
   default_voice: ofutonp    # 物語 JSON に "voice" がないときの声（下の voices のキー）
-  user_dict: assets/tts/user_dict.yaml   # 読み・アクセントの辞書。tts のたびに使うエンジンへ反映
+  user_dict: ../../assets/tts/user_dict.yaml   # 読み・アクセントの辞書。tts のたびに使うエンジンへ反映
   speed: 1.0                # 声ごとに speed / speed_max を書かなければこの値
   speed_max: 1.15           # 長さが上限を超えたら 0.03 刻みでここまで上げる
   # 文の前後にはエンジンが 0.1 秒ずつ無音を付ける。下の値はそれに足す間
@@ -32,13 +32,13 @@ voices:
 
 comfyui:
   url: http://localhost:8188
-  workflow: assets/styles/workflow.json
+  workflow: ../../assets/styles/workflow.json
   style: default            # assets/styles/default.txt
   width: 1080
   height: 1920
 
 subs:
-  font_file: assets/fonts/NotoSerifJP-Medium.otf
+  font_file: ../../assets/fonts/NotoSerifJP-Medium.otf
   font_name: Noto Serif JP Medium  # libass はファミリー名（name ID 1）で探す
   font_size: 92              # 1行10字 × 92px = 920px（左右に余白80pxずつ）。2026-11-20 スマホで小さいとの指摘で 80 → 92
   outline: 6
@@ -78,7 +78,7 @@ qa:
   subs_bottom_ratio: 0.2    # 下20%はアプリの表示と重なるので字幕を置かない
 
 bgm:
-  path: assets/bgm/track01.wav
+  path: ../../assets/bgm/track01.wav
   gain_db: -18              # Content ID の検出テストで決める（-14 / -18 / -22）
   start_seconds: 0          # 曲の頭から使う
 

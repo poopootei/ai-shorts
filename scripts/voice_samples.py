@@ -21,7 +21,7 @@ import soundfile as sf
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from ai_shorts import userdict, voices  # noqa: E402
-from ai_shorts.config import load_project  # noqa: E402
+from ai_shorts.config import add_channel_arg, load_project, script_root  # noqa: E402
 from ai_shorts.story import load_approved  # noqa: E402
 from ai_shorts.tts import VoiceSettings, build_segments, synthesize_story  # noqa: E402
 
@@ -40,16 +40,17 @@ def voice_for(project, spec: str) -> voices.Voice:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_channel_arg(ap)
     ap.add_argument("voices", nargs="+", help="voices のキー、または エンジン名:スタイルID")
     ap.add_argument("--id", required=True, help="文章を取る物語（承認済み）")
     ap.add_argument("--paragraph", type=int, default=1, help="何段落目を読ませるか（1から）")
     args = ap.parse_args()
 
-    project = load_project(ROOT)
+    project = load_project(script_root())
     para = load_approved(project, args.id).paragraphs[args.paragraph - 1]
     segs = build_segments([para])
     words = userdict.load(project.path(project.get("tts.user_dict")))
-    out = ROOT / "work" / "voice_samples"
+    out = project.root / "work" / "voice_samples"
     out.mkdir(parents=True, exist_ok=True)
     pcm, t = [], 0.0
     for i, spec in enumerate(args.voices, start=1):

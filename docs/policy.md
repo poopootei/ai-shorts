@@ -35,5 +35,5 @@
 
 ## 投稿
 
-- 予約投稿で、まとめて上げて毎日決まった時間に公開する。`python -m ai_shorts upload` で上げる（decisions.md D-015）。YouTube Studio から手で上げてもよい。
+- 予約投稿で、まとめて上げて毎日決まった時間に公開する。`python -m ai_shorts -c <ch> upload` で上げる（decisions.md D-015）。YouTube Studio から手で上げてもよい。
 - 投稿するのはユーザーが頼んだときだけ。勝手に投稿する仕組みは作らない。YouTube Data API で使う権限は `youtube.upload` だけ。

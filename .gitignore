@@ -2,20 +2,20 @@
 __pycache__/
 *.pyc
 config.yaml
-# YouTube の認証情報（OAuth クライアントとトークン）
+# YouTube の認証情報（OAuth クライアントとトークン。channels/{name}/secrets/）
 secrets/
 
-work/*
-!work/.gitkeep
-ready/*
-!ready/.gitkeep
-# 動画の置き場（mp4・説明文は git に入れない。経緯は stories/*/{id}.json の history）
-upload/*
-!upload/.gitkeep
-posted/*
-!posted/.gitkeep
-rejected/*
-!rejected/.gitkeep
+# チャンネルごとの生成物（channels/{name}/）。動画・説明文・中間ファイルは git に入れない。経緯は stories/*/{id}.json の history
+channels/*/work/*
+!channels/*/work/.gitkeep
+channels/*/ready/*
+!channels/*/ready/.gitkeep
+channels/*/upload/*
+!channels/*/upload/.gitkeep
+channels/*/posted/*
+!channels/*/posted/.gitkeep
+channels/*/rejected/*
+!channels/*/rejected/.gitkeep
 
 *.wav
 *.mp3

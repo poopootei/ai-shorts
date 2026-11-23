@@ -1,5 +1,5 @@
 # 青空文庫の紹介チャンネル（試作）の設定。共通の assets は ../../assets を使う。
-# 使い方: $env:AI_SHORTS_ROOT = "<repo>/channels/aozora" にしてから python -m ai_shorts ...
+# 使い方: python -m ai_shorts -c aozora ...（scripts も -c aozora）
 # （このフォルダの中で実行すれば、環境変数なしでもここが作業場所になる）
 # config.yaml にコピーして使う
 

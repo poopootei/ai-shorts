@@ -5,13 +5,15 @@ description: ai-shorts の作業環境（Python の .venv、ffmpeg、音声合�
 
 # 環境を作る・確かめる
 
+`<ch>` はチャンネル名（CLAUDE.md の「チャンネル」）。`stories/`・`work/`・`upload/`・`config.yaml` などのパスは、チャンネルのフォルダ `channels/<ch>/` から見たもの。
+
 表と大きさは `docs/runbook.md` の 1。作業のルートは `D:\prj\ai-shorts`。
 
 ## 確かめる（壊れていないか）
 
 ```bash
 .venv/Scripts/python -m pytest -q          # 単体テスト（エンジンなしで動く）
-.venv/Scripts/python scripts/tts_status.py # エンジンと声
+.venv/Scripts/python scripts/tts_status.py -c <ch> # エンジンと声
 ffmpeg -hide_banner -filters | grep -E " (ass|subtitles|drawtext|xfade) "   # 字幕・クレジット・切り替えに必要
 ```
 足りないものだけ下の手順で入れる。
@@ -22,7 +24,7 @@ ffmpeg -hide_banner -filters | grep -E " (ass|subtitles|drawtext|xfade) "   # �
 2. ffmpeg：`winget install Gyan.FFmpeg`（libass・drawtext つきの full build）。
 3. エンジンと声：`scripts/setup_tools.py`（`coeiroink` / `aivisspeech` / `coeiroink-voice <UUID>` / `aivis-model <UUID>`）。いま使っている声の UUID は runbook 1 の表にある。
 4. エンジンを起動して `scripts/tts_status.py` が全部 OK になるまで。
-5. `pytest` と、承認済みの物語1本で `python -m ai_shorts all --id <id>` が通ることを確かめる。
+5. `pytest` と、承認済みの物語1本で `python -m ai_shorts -c <ch> all --id <id>` が通ることを確かめる。
 
 ## 守ること
 

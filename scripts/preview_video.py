@@ -9,16 +9,20 @@
 from __future__ import annotations
 
 import argparse
-import os
 import json
 import subprocess
+import sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()  # チャンネルごとの作業場所（channels/{name}/）
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from ai_shorts.config import add_channel_arg, script_root  # noqa: E402
+
+ROOT = script_root()  # チャンネルのフォルダ（channels/{name}/）。--channel で選ぶ
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_channel_arg(ap)
     ap.add_argument("id")
     ap.add_argument("--crop", action="store_true", help="字幕の帯（画面の中ほど）を原寸で切り出す")
     args = ap.parse_args()

@@ -10,18 +10,21 @@ approved: true にし、notes の先頭に「YYYY-MM-DD 承認」と、直した
 from __future__ import annotations
 
 import argparse
-import os
 import datetime as dt
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()  # チャンネルごとの作業場所（channels/{name}/）
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from ai_shorts.config import add_channel_arg, script_root  # noqa: E402
+
+ROOT = script_root()  # チャンネルのフォルダ（channels/{name}/）。--channel で選ぶ
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_channel_arg(ap)
     ap.add_argument("ids", nargs="+")
     ap.add_argument("--note", default="検査に合格。物語CHECK なし（D-018）", help="直した点など（notes に残る）")
     ap.add_argument("--voice", help="声を決めたときに上書きする（config.yaml の voices のキー）")

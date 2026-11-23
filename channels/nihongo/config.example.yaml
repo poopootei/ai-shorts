@@ -1,5 +1,5 @@
 # 「物語で学ぶ日本語」チャンネル（海外の日本語学習者向け）の設定。共通の assets は ../../assets を使う。
-# 使い方: $env:AI_SHORTS_ROOT = "<repo>/channels/nihongo" にしてから python -m ai_shorts ...
+# 使い方: python -m ai_shorts -c nihongo ...（scripts も -c nihongo）
 # 日本語の音声（ゆっくり）＋ 日本語の字幕（ルビ付き）＋ 英訳。docs/decisions.md D-022
 format: lesson   # 1本で1文を、普通の速さ → かたまりごとの分解 → ゆっくり → まねる間 → 次の予告（D-024）
 

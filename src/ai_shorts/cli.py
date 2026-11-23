@@ -1,4 +1,6 @@
-"""python -m ai_shorts <stage> --id <story_id>
+"""python -m ai_shorts --channel <name> <stage> --id <story_id>
+
+チャンネルは channels/{name}/（shortshort / nihongo など）。--channel はコマンドの前でも後でもよい。
 
 動画を作る工程（tts / subs / render / qa / all）と、状態の管理
 （status / ideas / approve-video / reject-video / posted / reject-story / revive-story）、
@@ -13,7 +15,7 @@ import sys
 from typing import Callable
 
 from . import library, qa, render, subs, tts, upload
-from .config import Project, load_project
+from .config import Project, channel_names, load_project
 from .errors import AiShortsError
 from .story import list_approved
 
@@ -29,6 +31,8 @@ STAGES: dict[str, Callable[[Project, str], None]] = {
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ai_shorts", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
+    channel_help = f"チャンネル（{' / '.join(channel_names())}）。channels/{{name}}/ で作業する"
+    parser.add_argument("-c", "--channel", help=channel_help)
     sub = parser.add_subparsers(dest="stage", required=True)
     for name in STAGES:
         p = sub.add_parser(name, help=f"{name} 工程を実行する")
@@ -79,6 +83,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("revive-story", help="ボツの物語を直すために stories/draft/ へ戻す")
     p.add_argument("id")
     p.add_argument("--note", default="", help="戻す理由")
+    for p in sub.choices.values():  # サブコマンドの後ろに書いてもよい
+        p.add_argument("-c", "--channel", default=argparse.SUPPRESS, help=channel_help)
     return parser
 
 
@@ -153,7 +159,7 @@ def run_upload(project: Project, args: argparse.Namespace) -> None:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        project = load_project()
+        project = load_project(channel=args.channel)
         if args.stage in STAGES:
             STAGES[args.stage](project, args.id)
         elif args.stage == "all":

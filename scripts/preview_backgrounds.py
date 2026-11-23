@@ -13,7 +13,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import subprocess
 import sys
 import tempfile
@@ -21,7 +20,10 @@ from pathlib import Path
 
 import requests
 
-ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()  # チャンネルごとの作業場所（channels/{name}/）
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from ai_shorts.config import add_channel_arg, script_root  # noqa: E402
+
+ROOT = script_root()  # チャンネルのフォルダ（channels/{name}/）。--channel で選ぶ
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fetch_stock_images import HEADERS, score, search  # noqa: E402
 
@@ -38,6 +40,7 @@ def blank(path: Path, color: str) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_channel_arg(ap)
     ap.add_argument("queries", nargs="+", help="検索語（英語）")
     ap.add_argument("--name", required=True, help="シートの名前（物語の id など）")
     ap.add_argument("--per-query", type=int, default=4)

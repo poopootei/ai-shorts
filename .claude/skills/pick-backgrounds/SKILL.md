@@ -5,23 +5,25 @@ description: ai-shorts の動画の背景画像を、Openverse の CC0 / パブ�
 
 # 背景画像を選ぶ
 
+`<ch>` はチャンネル名（CLAUDE.md の「チャンネル」）。`stories/`・`work/`・`upload/`・`config.yaml` などのパスは、チャンネルのフォルダ `channels/<ch>/` から見たもの。
+
 Python は `.venv\Scripts\python`（以下 `py`）。画像は CC0 か PDM だけ（スクリプトがそれ以外を弾く）。
 
 ## 手順
 
 1. 段落ごとの場面を決める：物語 JSON の `image_prompts` と `notes` の検索語候補を見る。
 2. 候補シートを作る：
-   `py scripts/preview_backgrounds.py --name <id> "検索語1" "検索語2" "検索語3"`
+   `py scripts/preview_backgrounds.py -c <ch> --name <id> "検索語1" "検索語2" "検索語3"`
    - 1行 = 1検索語、上位4枚。端末に `検索語 [列] ID ライセンス 出典: タイトル` が出る。
    - `work/_previews/<id>_sheet.png` を Read で**自分の目で見て**選ぶ。タイトルだけで選ばない（「elevator」で花の図版が出るなど、タイトルと中身がずれる）。
 3. 合うものがなければ検索語を変えて 2 をくり返す。
    - 英語の短い語（2〜3語）が当たりやすい。具体物（"radio telescope night"）か雰囲気（"empty office", "milky way"）。
    - 屋内の細かい場面は見つかりにくい。物語の雰囲気に合う別の絵（夜空、古い部屋など）で代えてよい。
 4. ID で取る（検索の順番は毎回変わるので、--skip ではなく ID を使う）：
-   `py scripts/fetch_stock_images.py --id <id> --query "id:<ID1>" --query "id:<ID2>" --query "id:<ID3>"`
+   `py scripts/fetch_stock_images.py -c <ch> --id <id> --query "id:<ID1>" --query "id:<ID2>" --query "id:<ID3>"`
    - 1枚だけ差し替えるときも全段落分を渡す。残す画像の ID は `work/<id>/images.json` の `openverse_id`。
 5. 取れた3枚を並べて確かめる（ffmpeg で `hstack` したものを Read で見る）。合っていなければ 4 をやり直す。
-6. 動画に反映するには `py -m ai_shorts render --id <id>` と `qa`（tts と subs は不要）。
+6. 動画に反映するには `py -m ai_shorts -c <ch> render --id <id>` と `qa`（tts と subs は不要）。
 
 ## 選ぶ基準
 
