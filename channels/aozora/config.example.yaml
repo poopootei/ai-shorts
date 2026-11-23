@@ -1,0 +1,83 @@
+# 青空文庫の紹介チャンネル（試作）の設定。共通の assets は ../../assets を使う。
+# 使い方: $env:AI_SHORTS_ROOT = "<repo>/channels/aozora" にしてから python -m ai_shorts ...
+# （このフォルダの中で実行すれば、環境変数なしでもここが作業場所になる）
+# config.yaml にコピーして使う
+
+tts:
+  default_voice: ofutonp    # 物語 JSON に "voice" がないときの声（下の voices のキー）
+  user_dict: ../../assets/tts/user_dict.yaml   # 読み・アクセントの辞書。tts のたびに使うエンジンへ反映
+  speed: 1.0                # 声ごとに speed / speed_max を書かなければこの値
+  speed_max: 1.15           # 長さが上限を超えたら 0.03 刻みでここまで上げる
+  # 文の前後にはエンジンが 0.1 秒ずつ無音を付ける。下の値はそれに足す間
+  pause_between_sentences: 0.3
+  pause_between_paragraphs: 0.6   # 段落の境目（画像の切り替え位置）
+  sample_rate: 48000
+  pre_silence: 2.0          # 声が始まるまでの無音。この間に冒頭の hook だけを見せる（subs.hook_alone、D-013）
+  post_silence: 1.0
+  max_voice_seconds: 58.0
+
+# 音声合成エンジン。起動は scripts/start_tts.ps1
+engines:
+  coeiroink:   {type: coeiroink, url: "http://127.0.0.1:50032"}
+  aivisspeech: {type: voicevox,  url: "http://127.0.0.1:10101"}   # VOICEVOX 互換の API
+  voicevox:    {type: voicevox,  url: "http://127.0.0.1:50021"}   # いまは使っていない（D-011）
+
+# 使ってよい声。物語 JSON の "voice" にキーを書いて選ぶ。credit は説明文と画面に出す表記（規約どおりに）
+# style_id は各エンジンの話者一覧（COEIROINK: /v1/speakers、AivisSpeech: /speakers）で確認できる
+voices:
+  # AivisSpeech の声は使わない（2026-11-21 動画CHECKで「聞き取りにくい」）
+  ofutonp:           {engine: coeiroink,   style_id: 2,  credit: "COEIROINK:おふとんP"}        # 男性・のーまるv2
+  ofutonp_kanashimi: {engine: coeiroink,   style_id: 9,  credit: "COEIROINK:おふとんP"}        # 男性・かなしみ
+  tsukuyomi:         {engine: coeiroink,   style_id: 0,  credit: "COEIROINK:つくよみちゃん"}  # 女性・れいせい
+
+comfyui:
+  url: http://localhost:8188
+  workflow: ../../assets/styles/workflow.json
+  style: default            # assets/styles/default.txt
+  width: 1080
+  height: 1920
+
+subs:
+  font_file: ../../assets/fonts/NotoSerifJP-Medium.otf
+  font_name: Noto Serif JP Medium  # libass はファミリー名（name ID 1）で探す
+  font_size: 92              # 1行10字 × 92px = 920px（左右に余白80pxずつ）。2026-11-20 スマホで小さいとの指摘で 80 → 92
+  outline: 6
+  max_chars_per_line: 10
+  position_y_ratio: 0.45    # 画面上端からの割合。下20%には置かない
+  linger_seconds: 0.3       # 文の読み終わりのあと、字幕を残す長さ（次の文までの間を超えない）
+  hook_seconds: 2.0         # 冒頭に hook を出す長さ
+  hook_alone: true          # hook は最初の文が始まるまでに消し、本文の字幕と重ねない（D-013）
+  hook_font_size: 104
+  hook_max_chars_per_line: 8
+  hook_position_y_ratio: 0.40
+  hook_box: true            # hook を半透明の帯で囲んで、本文と見分けやすくする
+  hook_box_opacity: 0.75    # 帯の濃さ（0 = 透明、1 = 真っ黒）
+  hook_box_padding: 36      # 文字のまわりの帯の余白（px）
+
+render:
+  width: 1080
+  height: 1920
+  fps: 30
+  zoom_end: 1.08
+  crossfade_seconds: 0.5
+  target_lufs: -14
+  limiter_knee: 0.85        # 音量を揃えたあと、ここを超える波形をなだらかに押さえる
+  limiter_ceiling: 0.98
+  max_video_seconds: 59.0
+  background_color: "0x14141c"  # img_1.png がないときの背景
+  crf: 20
+  x264_preset: medium
+  show_credit_overlay: true
+  credit_font_size: 34
+  credit_margin: 40         # 左端からの px
+  credit_y_ratio: 0.06      # 上端からの割合
+
+qa:
+  lufs_tolerance: 1.0
+  subs_side_margin: 40      # 字幕の左右に空ける px
+  subs_bottom_ratio: 0.2    # 下20%はアプリの表示と重なるので字幕を置かない
+
+bgm:
+  path: ../../assets/bgm/track01.wav
+  gain_db: -18              # Content ID の検出テストで決める（-14 / -18 / -22）
+  start_seconds: 0          # 曲の頭から使う

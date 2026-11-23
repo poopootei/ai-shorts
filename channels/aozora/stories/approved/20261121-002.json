@@ -1,0 +1,41 @@
+{
+  "id": "20261121-002",
+  "title": "1分でわかる『山月記』中島敦",
+  "hook": "その男は、虎になった",
+  "body": "詩人として名を残したかった男、李徴。役人の仕事をやめて詩にうちこんだが、名は上がらなかった。貧しさに負け、彼はしかたなく役人に戻った。そしてある夜、叫びながら闇へ駆けだし、二度と戻らなかった。\n翌年、彼の旧友が、山の中で一匹の虎に襲われかける。虎は草むらに隠れ、人の声でつぶやいた。「あぶないところだった」。その声は、李徴のものだった。\n李徴は語る。自分の才能を信じきれず、磨こうともしなかった。それでいて、凡人と並ぶことも許せなかった。臆病な自尊心と、尊大な羞恥心。誰の心にもひそむ、一匹の獣の話である。",
+  "image_prompts": [
+    "misty mountain path at night",
+    "tiger in tall grass",
+    "full moon over mountains"
+  ],
+  "tags": [
+    "青空文庫",
+    "名作",
+    "中島敦",
+    "1分でわかる"
+  ],
+  "voice": "ofutonp",
+  "source": "中島敦『山月記』（青空文庫）",
+  "approved": true,
+  "notes": "2026-11-21 ユーザーが承認（本文の修正なし）。青空文庫の紹介チャンネルの試作。著者没年 1942（著作権切れ）。引用は青空文庫の本文と照合。旧友（袁傪）は名前を出さない。背景の仮検索語: mountain path night / tiger grass / moon mountains 2026-11-21 動画CHECKで「声が聞き取りにくい」→ 声を aida_calm から ofutonp に変更（本文は変えていない）。",
+  "history": [
+    {
+      "date": "2026-11-21",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "video_rejected",
+      "reason": "声（AivisSpeech:阿井田 茂 Calm）が聞き取りにくい",
+      "idea": "AivisSpeech をやめて COEIROINK の声で作り直す（青空文庫のチャンネルでは AivisSpeech を使わない）",
+      "file": "rejected/20261121-002-1.mp4",
+      "next": "作り直す"
+    },
+    {
+      "date": "2026-11-22",
+      "event": "video_approved",
+      "note": "作り直し後 OK"
+    }
+  ]
+}

@@ -16,3 +16,18 @@
 - surface: 小部屋
   pronunciation: コベヤ
   accent_type: 0
+- surface: 李徴
+  pronunciation: リチョウ
+  accent_type: 1
+  word_type: PROPER_NOUN
+  priority: 9
+- surface: 山猫軒
+  pronunciation: ヤマネコケン
+  accent_type: 0
+  word_type: PROPER_NOUN
+- surface: 当軒
+  pronunciation: トウケン
+  accent_type: 0
+- surface: 大泥棒
+  pronunciation: オオドロボウ
+  accent_type: 3
