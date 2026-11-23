@@ -1,0 +1,32 @@
+{
+  "id": "20261123-010",
+  "title": "寄り道の案内",
+  "hook": "スマホが勝手に案内を",
+  "body": "帰り道、スマホの地図が、勝手に道案内を始めた。「三百メートル先を、左です」。家とは逆の方向だ。気味が悪いが、なぜか逆らえずに歩いた。画面の矢印は、迷いなく、知らない路地をさしている。\n路地を抜け、坂を上り、商店街に入る。「目的地に着きました」。そこは、小さな花屋の前だった。首をかしげていると、画面に文字が浮かんだ。「本日は、結婚記念日です」。\n僕は青くなって、店でいちばん大きな花束を買った。花束を抱えて家に帰ると、妻が玄関で待っていた。「間に合ったわね」。妻の手の中のスマホには、僕の現在地が、小さく光っていた。",
+  "image_prompts": [
+    "a smartphone map on a street at dusk",
+    "a small flower shop",
+    "a bouquet of flowers at a front door"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "日常",
+    "ほっこり"
+  ],
+  "voice": "ofutonp",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の検索語の候補: phone map street / flower shop / bouquet",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}
