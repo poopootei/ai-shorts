@@ -122,6 +122,7 @@ ai-shorts/
 │   ├── bgm.md             BGM制作と TuneCore 申請のルール
 │   ├── story-guidelines.md 物語の書き方と人が確認する点
 │   ├── channel-ideas.md   新しいチャンネルの案（中身・いいところ・懸念点）
+│   ├── overseas-report.md 海外向けの狙い所（ジャンル・人気・競合の比較）
 │   └── decisions.md       決定事項の記録
 ├── stories/
 │   ├── draft/             生成直後（物語CHECK待ち）
