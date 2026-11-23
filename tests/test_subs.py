@@ -37,6 +37,15 @@ def test_atoms_keep_okurigana_compounds():
     assert atoms("犬が物を運ぶ", 10) == ["犬が", "物を", "運ぶ"]
 
 
+def test_atoms_keep_compound_verbs_and_nouns():
+    assert atoms("きのうの売れ残りです", 10) == ["きのうの", "売れ残りです"]
+    assert atoms("空を見上げた", 10) == ["空を", "見上げた"]
+
+
+def test_atoms_split_long_hiragana_after_adverbial_ku():
+    assert atoms("あまりおいしくありません」", 10) == ["あまりおいしく", "ありません」"]
+
+
 def test_wrap_does_not_carry_on_past_period_then_break_mid_phrase():
     lines = wrap("「天気は、西からやってくるでしょう。娘の町の今日が、この町の明日なんです」", 10)
     assert "くるでしょう。" in lines

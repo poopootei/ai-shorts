@@ -29,8 +29,10 @@ PREFIXES = "おご"
 # 送りがなの後に付いて一語になる漢字（生き物・話し方・置き場）。この前では切らない。
 COMPOUND_TAILS = "物方場"
 PARTICLES = "のがはをにでともへや"
-# 長いひらがなの続きを字数で切るときは、この字の後を選ぶ（前の組ほど優先。「やって｜くるでしょう」）。
-SPLIT_AFTER_TIERS = ("てを", "にがはとも", "で")
+# 漢字1字＋この送りがな1字＋漢字は、複合語として切らない（売れ残り・見上げた・思い出・吸い上げ）。
+CONTINUATIVE = "いきしちひびみりぎじえけせねべめれげ"
+# 長いひらがなの続きを字数で切るときは、この字の後を選ぶ（前の組ほど優先。「やって｜くるでしょう」「おいしく｜ありません」）。
+SPLIT_AFTER_TIERS = ("てを", "にがはとも", "で", "く")
 DETERMINERS = ("この", "その", "あの", "どの")
 # 行の区切り方のコスト。行の余り字数 s に対して s + s²/max_chars（行が少なく、長さがそろうほど安い）に、次の罰を足す。
 # 句読点以外で切ると、1行増やすより高くつくようにしてある（「背を｜測り」より「、」で切る）。
@@ -107,7 +109,8 @@ def atoms(text: str, max_chars: int) -> list[str]:
         is_prefix = c in PREFIXES and _is_kanji(nxt) and (len(cur) == 1 or not _is_hiragana(cur[-2]))
         # 漢字＋送りがな（1〜2字）＋「物」などは一語（生き物・落とし物）。助詞の後（犬が｜物を）は除く
         is_compound = (nxt in COMPOUND_TAILS and c not in PARTICLES
-                       and any(_is_kanji(x) for x in cur[-3:-1]))
+                       and any(_is_kanji(x) for x in cur[-3:-1])) or (
+            c in CONTINUATIVE and _is_kanji(nxt) and len(cur) >= 2 and _is_kanji(cur[-2]))
         boundary = (c in BREAK_AFTER and nxt not in BREAK_AFTER) or (
             # 「っ」の後（引っ越す）と接頭語の後（お知らせ）では切らない
             _is_hiragana(c) and c not in SMALL_KANA and not is_prefix and not is_compound

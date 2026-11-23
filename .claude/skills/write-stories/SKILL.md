@@ -20,7 +20,7 @@ description: ai-shorts の朗読用ショートショート（250〜280字）を
    - `id` = ファイル名。日付は作った日、連番は `stories/` の既存（draft・approved・posted・rejected のすべて）と重ならないように。
    - `hook` は 15 字以内（画面では 8 字ずつ折り返す）。
    - `image_prompts` は段落の数だけ。`notes` に背景の検索語の候補（英語の短い語）を書く。
-   - `"voice"` に雰囲気に合う声を `config.yaml` の `voices` から選ぶ（COEIROINK だけ。D-017。男性の語り手なら ofutonp とそのスタイル違い ofutonp_kanashimi / ofutonp_yorokobi / ofutonp_aseri、女性なら tsukuyomi。話ごとに散らす）。
+   - `"voice"` に雰囲気に合う声を `config.yaml` の `voices` から選ぶ（COEIROINK だけ。D-017。男性の語り手なら ofutonp とそのスタイル違い ofutonp_kanashimi / ofutonp_yorokobi、女性なら tsukuyomi。話ごとに散らす。ofutonp_aseri は聞き取りにくいので選ばない）。
    - `"approved": false`。
 5. 検査：`py scripts/check_story.py stories/draft/<id>.json --readings`（エンジンが止まっていたら `--readings` なしで、あとで読みを確かめる）
    - NG は直す。字数は 250〜280 字に入れる（足りない・多いときは文を足し引きする）。
