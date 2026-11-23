@@ -124,7 +124,7 @@ def test_status_and_rejections(project):
     put_story(project, "rejected", "e", history=[
         {"date": "2026-11-19", "event": "video_rejected", "reason": "R", "idea": "I", "file": "rejected/e-1.mp4"}])
     states = {r.id: r.state for r in library.status(project)}
-    assert states == {"a": "物語CHECK待ち", "b": "動画CHECK待ち", "c": "投稿待ち",
+    assert states == {"a": "下書き", "b": "動画CHECK待ち", "c": "投稿待ち",
                       "d": "動画づくり待ち", "e": "ボツ（動画）"}
     [r] = library.rejections(project)
     assert (r.id, r.stage, r.reason, r.idea) == ("e", "動画", "R", "I")

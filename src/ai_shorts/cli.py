@@ -71,7 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("share", help="投稿待ち（upload/）を MiniPC に送り、タブレットで保存・コピーできるようにする")
     p.add_argument("--install", action="store_true", help="MiniPC にサーバーを置いて起動し直す（初回・server.py を変えたとき）")
 
-    p = sub.add_parser("reject-story", help="物語CHECKでボツ：stories/draft → stories/rejected")
+    p = sub.add_parser("reject-story", help="物語をボツにする：stories/draft → stories/rejected")
     p.add_argument("id")
     p.add_argument("--reason", required=True, help="ボツの理由")
     p.add_argument("--idea", required=True, help="改善案（次にどう書くか）")
@@ -113,7 +113,7 @@ def print_status(project: Project) -> None:
     if not rows:
         print("物語がありません。")
         return
-    order = ["物語CHECK待ち", "動画づくり待ち", "QA NG", "動画CHECK待ち", "投稿待ち", "投稿済み"]
+    order = ["下書き", "動画づくり待ち", "QA NG", "動画CHECK待ち", "投稿待ち", "投稿済み"]
     rows.sort(key=lambda r: (order.index(r.state) if r.state in order else len(order), r.id))
     current = None
     for r in rows:
@@ -192,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ボツ → {path.relative_to(project.root).as_posix()}")
         elif args.stage == "revive-story":
             path = library.revive_story(project, args.id, args.note)
-            print(f"下書きに戻しました → {path.relative_to(project.root).as_posix()}（もう一度物語CHECKを通す）")
+            print(f"下書きに戻しました → {path.relative_to(project.root).as_posix()}（直したら検査して承認し直す）")
         return 0
     except AiShortsError as e:
         print(f"エラー: {e}", file=sys.stderr)

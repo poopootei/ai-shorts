@@ -15,7 +15,7 @@
 ## 運用の分担
 
 - Claude：説明文・プロフィール・タイトルなどの案づくり、予約投稿（ユーザーが頼んだとき、`upload`）と記録、ボツと改善案の振り返り、方針の整理。
-- ユーザー：YouTube Studio での設定の変更。動画CHECK・物語CHECK と、投稿するかどうかの判断。
+- ユーザー：YouTube Studio での設定の変更。動画CHECK と、投稿するかどうかの判断。
 - YouTube Data API は予約投稿だけに使う（権限は `youtube.upload` のみ。decisions.md D-015）。チャンネルの設定は API で変えない。
 
 ## チャンネル説明文

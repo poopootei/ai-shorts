@@ -30,7 +30,7 @@ Claude Code セッション内で生成する（API は使わない）。書き�
 ```
 
 - `image_prompts` の数 = 段落の数（2〜3）。
-- 人が確認して `approved: true` にし、`stories/approved/` に移動する。
+- 検査（`scripts/check_story.py`）に通したら `scripts/approve_story.py` で `approved: true` にし、`stories/approved/` に移す（物語CHECK はしない。D-018）。
 
 ## 1. 音声（tts）
 

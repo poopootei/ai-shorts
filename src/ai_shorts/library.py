@@ -2,8 +2,8 @@
 
 状態はフォルダで表し、経緯は物語 JSON の "history" に残す（git で管理される）。
 
-    stories/draft/      物語CHECK待ち
-    stories/approved/   物語CHECK合格。動画は work/ → ready/（動画CHECK待ち）→ upload/（投稿待ち）
+    stories/draft/      下書き（検査して approve_story.py で承認。物語CHECK はしない）
+    stories/approved/   承認済み。動画は work/ → ready/（動画CHECK待ち）→ upload/（投稿待ち）
     stories/posted/     投稿済み。動画は posted/（upload で予約投稿したものも、手で上げて posted で記録したものも）
     stories/rejected/   ボツ（物語でも動画でも）。ボツ動画は rejected/
 
@@ -115,7 +115,7 @@ def _rel(project: Project, p: Path) -> str:
 
 def reject_story(project: Project, story_id: str, reason: str, idea: str,
                  today: dt.date | None = None) -> Path:
-    """物語CHECKでボツ。draft / approved（動画がまだないもの）→ stories/rejected/"""
+    """物語をボツにする。draft / approved（動画がまだないもの）→ stories/rejected/"""
     _require_reason(reason, idea)
     state, path = find_story(project, story_id)
     if state not in ("draft", "approved"):
@@ -132,7 +132,7 @@ def reject_story(project: Project, story_id: str, reason: str, idea: str,
 
 def revive_story(project: Project, story_id: str, note: str = "",
                  today: dt.date | None = None) -> Path:
-    """ボツにした物語を直すために stories/draft/ へ戻す。もう一度物語CHECKを通す。"""
+    """ボツにした物語を直すために stories/draft/ へ戻す。直したら検査して承認し直す。"""
     state, path = find_story(project, story_id)
     if state != "rejected":
         raise AiShortsError(f"{story_id} はボツではありません（stories/{state}/）。")
@@ -247,7 +247,7 @@ def status(project: Project) -> list[Row]:
             data = _read(path)
             sid, title = path.stem, data.get("title", "")
             if state == "draft":
-                rows.append(Row(sid, title, "物語CHECK待ち", "全文を読んで承認かボツか決める"))
+                rows.append(Row(sid, title, "下書き", "検査に通して approve_story.py で承認する"))
             elif state == "approved":
                 rows.append(Row(sid, title, *_video_state(project, sid)))
             elif state == "posted":
