@@ -1,0 +1,68 @@
+{
+  "id": "20261123-002",
+  "title": "\"Without doing\" in Japanese: 〜ずに | Learn Japanese with The Spider's Thread (Akutagawa)",
+  "hook": "How do you say \"without doing\" in Japanese?",
+  "body": "小《ちい》さな蜘蛛《くも》を、踏《ふ》まずに助《たす》けたのです。",
+  "translations": [
+    "He spared a little spider instead of stepping on it."
+  ],
+  "breakdown": [
+    {
+      "ja": "小《ちい》さな蜘蛛《くも》を",
+      "en": "a little spider",
+      "note": "ちいさな = small (used only before a noun). を marks the object."
+    },
+    {
+      "ja": "踏《ふ》まずに",
+      "en": "without stepping on it",
+      "note": "〜ずに = \"without ~ing\" (like 〜ないで). ふむ → ふま + ずに"
+    },
+    {
+      "ja": "助《たす》けたのです",
+      "en": "he saved it",
+      "note": "〜のです explains: \"(you see,) he saved it.\""
+    }
+  ],
+  "image_prompts": [
+    "spider web with dew",
+    "lotus pond",
+    "black smoke"
+  ],
+  "tags": [
+    "learnjapanese",
+    "japanesegrammar",
+    "jlptn4",
+    "japanese",
+    "akutagawa"
+  ],
+  "voice": "ofutonp",
+  "source": "Ryūnosuke Akutagawa, \"The Spider's Thread\" (1918), Aozora Bunko — retold in simple Japanese",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。レッスン形式の試作1本目（D-020）。『蜘蛛の糸』をやさしく語り直した第1話の6文目。文法のポイントは 〜ずに。背景は 蜘蛛の巣 / 蓮 / 煙（青空文庫の試作と同じ写真） 2026-11-23 動画CHECK で文字の見やすさを直すときに、予告の文頭の「Next line:」を外した（見出しと重複していたため）。 2026-11-23 ユーザーの提案で、最後の予告（next）を作品の出典と背景（about）に変えた（文はユーザーが承認）。",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_rejected",
+      "reason": "全体的に文字が小さすぎる。黒枠＋白文字で見えにくい",
+      "idea": "文字を大きくし、役割ごとに色を分け、文字の下に半透明の暗い板を敷く",
+      "file": "rejected/20261123-002-1.mp4",
+      "next": "作り直す"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "story_edited",
+      "note": "最後の予告を、出典と背景の一文（About this story）に変えた。ユーザーが承認"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "見出し 100px・出典の一文・文字の大きさの自動選択で OK"
+    }
+  ],
+  "about": "From \"The Spider's Thread\" (1918), a children's story by Akutagawa Ryūnosuke. Japan's top literary prize is named after him."
+}

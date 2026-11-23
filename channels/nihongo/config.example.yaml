@@ -1,0 +1,119 @@
+# 「物語で学ぶ日本語」チャンネル（海外の日本語学習者向け）の設定。共通の assets は ../../assets を使う。
+# 使い方: $env:AI_SHORTS_ROOT = "<repo>/channels/nihongo" にしてから python -m ai_shorts ...
+# 日本語の音声（ゆっくり）＋ 日本語の字幕（ルビ付き）＋ 英訳。docs/decisions.md D-018
+format: lesson   # 1本で1文を、普通の速さ → かたまりごとの分解 → ゆっくり → まねる間 → 次の予告（D-020）
+
+
+tts:
+  default_voice: ofutonp    # 物語 JSON に "voice" がないときの声（下の voices のキー）
+  user_dict: ../../assets/tts/user_dict.yaml   # 読み・アクセントの辞書。tts のたびに使うエンジンへ反映
+  speed: 0.85                # 声ごとに speed / speed_max を書かなければこの値
+  speed_max: 0.9           # 長さが上限を超えたら 0.03 刻みでここまで上げる
+  # 文の前後にはエンジンが 0.1 秒ずつ無音を付ける。下の値はそれに足す間
+  pause_between_sentences: 0.9
+  pause_between_paragraphs: 1.2   # 段落の境目（画像の切り替え位置）
+  sample_rate: 48000
+  pre_silence: 2.0          # 声が始まるまでの無音。この間に冒頭の hook だけを見せる（subs.hook_alone、D-013）
+  post_silence: 1.0
+  max_voice_seconds: 58.0
+
+# 音声合成エンジン。起動は scripts/start_tts.ps1
+engines:
+  coeiroink:   {type: coeiroink, url: "http://127.0.0.1:50032"}
+  aivisspeech: {type: voicevox,  url: "http://127.0.0.1:10101"}   # VOICEVOX 互換の API
+  voicevox:    {type: voicevox,  url: "http://127.0.0.1:50021"}   # いまは使っていない（D-011）
+
+# 使ってよい声。物語 JSON の "voice" にキーを書いて選ぶ。credit は説明文と画面に出す表記（規約どおりに）
+# style_id は各エンジンの話者一覧（COEIROINK: /v1/speakers、AivisSpeech: /speakers）で確認できる
+voices:
+  # AivisSpeech の声は使わない（2026-11-21 動画CHECKで「聞き取りにくい」）
+  ofutonp:           {engine: coeiroink,   style_id: 2,  credit: "COEIROINK:おふとんP"}        # 男性・のーまるv2
+  ofutonp_kanashimi: {engine: coeiroink,   style_id: 9,  credit: "COEIROINK:おふとんP"}        # 男性・かなしみ
+  tsukuyomi:         {engine: coeiroink,   style_id: 0,  credit: "COEIROINK:つくよみちゃん"}  # 女性・れいせい
+
+comfyui:
+  url: http://localhost:8188
+  workflow: ../../assets/styles/workflow.json
+  style: default            # assets/styles/default.txt
+  width: 1080
+  height: 1920
+
+subs:
+  fit: true               # 大きさは文ごとに選ぶ：下の *_font_size を上限に、不自然な折り返しをしない範囲でいちばん大きく（D-021）
+  fit_floor_ratio: 0.7     # 下限 = 上限 × この値
+  mode: learner            # 学習者向け：日本語（ルビ付き）と英訳を文ごとに同時に出す（D-018）
+  ruby_font_size: 62   # ルビは日本語の大きさに比例（62 / 140）
+  en_font_size: 80   # 意味・英訳（黄）の上限（3行まで、かたまりの意味は2行まで）
+  en_max_chars_per_line: 25
+  label_font_size: 100   # 見出し（藍の帯）。2026-11-23 56 → 72 → 100（変化が分からないとの指摘）
+  label_position_y_ratio: 0.22
+  font_file: ../../assets/fonts/KleeOne-SemiBold.ttf   # 教科書体（和風で、書くときの字の形が分かる）。OFL 1.1、D-021
+  font_name: Klee One SemiBold   # libass はファミリー名（name ID 1）で探す
+  font_size: 140   # 今日の1文の上限（日本語は2行まで）
+  outline: 6
+  max_chars_per_line: 12
+  position_y_ratio: 0.4
+  linger_seconds: 0.3       # 文の読み終わりのあと、字幕を残す長さ（次の文までの間を超えない）
+  hook_seconds: 2.0         # 冒頭に hook を出す長さ
+  hook_alone: true          # hook は最初の文が始まるまでに消し、本文の字幕と重ねない（D-013）
+  hook_font_size: 110   # 問いかけの上限（3行まで）
+  hook_max_chars_per_line: 18
+  hook_position_y_ratio: 0.40
+  hook_box: true            # hook を半透明の帯で囲んで、本文と見分けやすくする
+  hook_box_opacity: 0.75    # 帯の濃さ（0 = 透明、1 = 真っ黒）
+  hook_box_padding: 36      # 文字のまわりの帯の余白（px）
+  note_font_size: 68   # 文法のメモ（薄い緑）の上限（3行まで）
+  note_max_chars_per_line: 27
+  chunk_font_size: 180   # 分解のかたまりの上限（1行）
+  chunk_ruby_font_size: 75
+  chunk_max_chars_per_line: 9
+  panel_opacity: 0.72   # 文字の下に敷く暗い板の濃さ（背景の写真に左右されずに読めるように）
+  panel_padding: 36
+  panel_margin: 40
+
+render:
+  width: 1080
+  height: 1920
+  fps: 30
+  zoom_end: 1.08
+  crossfade_seconds: 0.5
+  target_lufs: -14
+  limiter_knee: 0.85        # 音量を揃えたあと、ここを超える波形をなだらかに押さえる
+  limiter_ceiling: 0.98
+  max_video_seconds: 59.0
+  background_color: "0x14141c"  # img_1.png がないときの背景
+  crf: 20
+  x264_preset: medium
+  show_credit_overlay: false   # 画面には声のクレジットを出さない（説明文には出す。2026-11-23 ユーザーの判断）
+  credit_font_size: 34
+  credit_margin: 40         # 左端からの px
+  credit_y_ratio: 0.06      # 上端からの割合
+
+qa:
+  description_lang: en      # 説明文のラベルを英語に（Source / Voice / Background images）
+  lufs_tolerance: 1.0
+  subs_side_margin: 40      # 字幕の左右に空ける px
+  subs_bottom_ratio: 0.2    # 下20%はアプリの表示と重なるので字幕を置かない
+
+bgm:
+  path: ../../assets/bgm/track_20261123.wav   # ユーザーの曲（2026-11-23、72秒）。wav は git に入れない
+  gain_db: -18             # below_voice_lu があるときは使わない
+  below_voice_lu: 12       # BGM を声より 12 LU 小さく。声が聞き取りやすく、曲もはっきり聞こえる大きさ（Content ID の検出テストで見直す）
+  fade_out_seconds: 1.5    # 動画の終わりで BGM を消していく
+  start_seconds: 0         # 曲の頭から使う
+
+# 物語の長さの目安（scripts/check_story.py）。学習者向けはゆっくり読むので短く
+story:
+  body_min_chars: 90
+  body_max_chars: 160
+  sentence_max_chars: 30
+  hook_max_chars: 44   # hook は英語
+
+# レッスン形式の間と速さ（format: lesson）。英語の解説は文字だけなので、読む時間を chunk_hold で取る
+lesson:
+  normal_speed: 1.0     # 今日の1文（普通の速さ）
+  slow_speed: 0.8       # かたまりと、最後のゆっくり読み
+  sentence_hold: 1.5    # 今日の1文のあとの間
+  chunk_hold: 3.5       # かたまりごとの、英語の意味とメモを読む時間
+  shadow_ratio: 1.3     # まねる間 = ゆっくり読みの長さ × この値
+  next_seconds: 5.0     # 最後の一文（出典と背景）を読む時間

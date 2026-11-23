@@ -1,0 +1,44 @@
+{
+  "id": "20261123-001",
+  "title": "Learn Japanese with a Story: The Spider's Thread, Part 1 | 蜘蛛の糸 (Akutagawa)",
+  "hook": "The Spider's Thread — Part 1",
+  "body": "ある日《ひ》、お釈迦様《しゃかさま》は極楽《ごくらく》の池《いけ》のそばにいました。池《いけ》の下《した》には、地獄《じごく》が見《み》えます。そこに、カンダタという男《おとこ》がいました。\nカンダタは、悪《わる》いことをたくさんした泥棒《どろぼう》です。でも、一度《いちど》だけ、いいことをしました。小《ちい》さな蜘蛛《くも》を、踏《ふ》まずに助《たす》けたのです。\nお釈迦様《しゃかさま》は、それを思《おも》い出《だ》しました。そして、一本《いっぽん》の蜘蛛《くも》の糸《いと》を、地獄《じごく》へ下《お》ろしました。",
+  "translations": [
+    "One day, the Buddha was standing by a pond in Paradise.",
+    "Far below the pond, he could see Hell.",
+    "A man named Kandata was there.",
+    "Kandata was a thief who had done many bad things.",
+    "But just once, he did something good.",
+    "He saved a little spider instead of stepping on it.",
+    "The Buddha remembered that.",
+    "So he let a single spider's thread down into Hell."
+  ],
+  "image_prompts": [
+    "lotus pond in soft light",
+    "black smoke in darkness",
+    "spider web with dew"
+  ],
+  "tags": [
+    "learnjapanese",
+    "japanese",
+    "japanesestory",
+    "akutagawa",
+    "aozorabunko"
+  ],
+  "voice": "ofutonp",
+  "source": "Ryūnosuke Akutagawa, \"The Spider's Thread\" (1918), Aozora Bunko — retold in simple Japanese",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。「物語で学ぶ日本語」の試作（D-018）。芥川龍之介『蜘蛛の糸』（著者没年 1927、著作権切れ）をやさしい日本語で語り直した第1話（全3話の予定）。背景は青空文庫の試作と同じ写真を使う候補: lotus / black smoke / spider web",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "BGM 入り（声より 12 LU 小さく）で OK"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+# このチャンネルの生成物（ルートの .gitignore と同じ考え方。動画と中間ファイルは git に入れない）
+work/*
+!work/.gitkeep
+ready/*
+!ready/.gitkeep
+upload/*
+!upload/.gitkeep
+posted/*
+!posted/.gitkeep
+rejected/*
+!rejected/.gitkeep
