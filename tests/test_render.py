@@ -85,3 +85,26 @@ def test_rel_to_root_reaches_shared_assets_from_channel(tmp_path):
     project = Project(root=root, config={})
     assert rel_to_root(project, root / "work" / "x" / "subs.ass") == "work/x/subs.ass"
     assert rel_to_root(project, tmp_path / "assets" / "fonts") == "../../assets/fonts"
+
+
+def test_relative_gain_keeps_bgm_below_voice():
+    import numpy as np
+    import pyloudnorm as pyln
+    from ai_shorts.render import relative_gain_db, to_stereo
+    sr = 48000
+    t = np.arange(sr * 3) / sr
+    voice = (0.1 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
+    bgm = to_stereo((0.5 * np.sin(2 * np.pi * 440 * t)).astype(np.float32))
+    gain = relative_gain_db(voice, bgm, sr, 12.0)
+    meter = pyln.Meter(sr)
+    v = meter.integrated_loudness(to_stereo(voice))
+    b = meter.integrated_loudness(bgm * 10 ** (gain / 20))
+    assert abs((v - b) - 12.0) < 0.2
+
+
+def test_fade_out_ends_silent():
+    import numpy as np
+    from ai_shorts.render import fade_out
+    x = np.ones((100, 2), dtype=np.float32)
+    y = fade_out(x, 10)
+    assert y[-1].max() == 0.0 and y[89].min() == 1.0 and x[-1].min() == 1.0

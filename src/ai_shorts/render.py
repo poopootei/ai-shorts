@@ -49,6 +49,30 @@ def mix(voice: np.ndarray, bgm: np.ndarray | None, bgm_gain_db: float) -> np.nda
     return voice + bgm * (10.0 ** (bgm_gain_db / 20.0))
 
 
+def relative_gain_db(voice: np.ndarray, bgm: np.ndarray, sample_rate: int, below_lu: float) -> float:
+    """BGM を「声より below_lu だけ小さい」音量にするための倍率（dB）。
+
+    曲や声によって元の音量が違っても、声との差が一定になる（bgm.below_voice_lu）。
+    声と重なる区間（動画の長さ）の BGM だけを測る。"""
+    meter = pyln.Meter(sample_rate)
+    v = meter.integrated_loudness(to_stereo(voice))
+    b = meter.integrated_loudness(to_stereo(bgm))
+    if not (np.isfinite(v) and np.isfinite(b)):
+        raise AiShortsError("声か BGM が無音のため、BGM の音量を決められません。")
+    return (v - below_lu) - b
+
+
+def fade_out(x: np.ndarray, samples: int) -> np.ndarray:
+    """終わりの samples だけ、音量を直線で 0 まで下げる（動画の終わりで BGM がぷつっと切れないように）。"""
+    if samples <= 0 or len(x) == 0:
+        return x
+    samples = min(samples, len(x))
+    y = x.copy()
+    ramp = np.linspace(1.0, 0.0, samples, dtype=np.float32)
+    y[-samples:] *= ramp[:, None] if y.ndim == 2 else ramp
+    return y
+
+
 def normalize_loudness(x: np.ndarray, sample_rate: int, target_lufs: float) -> np.ndarray:
     meter = pyln.Meter(sample_rate)
     current = meter.integrated_loudness(x)
@@ -97,7 +121,16 @@ def build_audio(project: Project, work: Path) -> tuple[Path, float]:
         ffmpeg.convert_audio(voice_path, converted, MIX_SAMPLE_RATE, 1)
         voice, _ = sf.read(converted, dtype="float32")
 
-    mixed = mix(voice, load_bgm(project, work), float(project.get("bgm.gain_db")))
+    bgm = load_bgm(project, work)
+    gain_db = float(project.get("bgm.gain_db"))
+    below = project.get("bgm.below_voice_lu", None)
+    if bgm is not None:
+        fade = float(project.get("bgm.fade_out_seconds", 0))
+        bgm = fade_out(to_stereo(bgm)[: len(voice)], int(fade * MIX_SAMPLE_RATE))
+        if below is not None:
+            gain_db = relative_gain_db(voice, bgm, MIX_SAMPLE_RATE, float(below))
+            log(f"BGM: 声より {float(below):g} LU 小さく（{gain_db:+.1f} dB）")
+    mixed = mix(voice, bgm, gain_db)
     target = float(project.get("render.target_lufs"))
     out = normalize_loudness(mixed, MIX_SAMPLE_RATE, target)
     out = soft_limit(

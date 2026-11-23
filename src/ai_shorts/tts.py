@@ -13,7 +13,7 @@ from typing import Any, Callable, Protocol
 import numpy as np
 import soundfile as sf
 
-from . import userdict, voices
+from . import ruby, userdict, voices
 from .config import Project
 from .errors import ExternalToolError, StoryTooLongError
 from .story import load_approved, split_sentences
@@ -45,7 +45,9 @@ class VoiceSettings:
 
 def tts_text(sentence: str) -> str:
     """読み上げ用の文。VOICEVOX はかぎかっこの前後に間を入れてしまうので外す。
-    「勇気」「眠り」のように並んだものは読点でつなぐ（字幕には元の文を使う）。"""
+    「勇気」「眠り」のように並んだものは読点でつなぐ（字幕には元の文を使う）。
+    ルビ（地獄《じごく》）は外して漢字で読ませる（読みが合っているかは check_story で確かめる）。"""
+    sentence = ruby.strip(sentence)
     for a, b in (("」「", "、"), ("』『", "、")):
         sentence = sentence.replace(a, b)
     return sentence.translate(str.maketrans("", "", "「」『』"))
@@ -164,6 +166,9 @@ def run(project: Project, story_id: str, client: TtsClient | None = None) -> Non
         print(f"[tts] {msg}")
 
     story = load_approved(project, story_id)
+    if project.get("format", "story") == "lesson":
+        run_lesson(project, story, client, log)
+        return
     segments = build_segments(story.paragraphs)
     if not segments:
         raise StoryTooLongError(f"{story_id} の本文が空です。")
@@ -209,3 +214,107 @@ def run(project: Project, story_id: str, client: TtsClient | None = None) -> Non
         json.dumps(timing, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     log(f"→ {out / 'voice.wav'}（{len(audio) / settings.sample_rate:.2f} 秒, 話速 {speed:.2f}）")
+
+
+# ---- レッスン形式（format: lesson、D-020） -----------------------------------
+
+@dataclass(frozen=True)
+class LessonStep:
+    role: str        # sentence（普通の速さ）/ chunk（かたまり）/ repeat（ゆっくり）
+    text: str
+    speed: float
+    hold: float      # 読み終わってから次までの間（画面の英語を読む時間）
+    index: int = 0   # chunk のとき、breakdown の何番目か
+
+
+def lesson_steps(sentence: str, breakdown: list[dict], cfg: dict[str, float]) -> list[LessonStep]:
+    """今日の1文 → かたまりごと → もう一度ゆっくり、の順の読み上げ。"""
+    steps = [LessonStep("sentence", sentence, cfg["normal_speed"], cfg["sentence_hold"])]
+    steps += [LessonStep("chunk", c["ja"], cfg["slow_speed"], cfg["chunk_hold"], i)
+              for i, c in enumerate(breakdown)]
+    steps.append(LessonStep("repeat", sentence, cfg["slow_speed"], 0.0))
+    return steps
+
+
+def assemble_lesson(
+    steps: list[LessonStep], clips: list[np.ndarray], sample_rate: int, *,
+    pre_silence: float, shadow_ratio: float, next_seconds: float,
+) -> tuple[np.ndarray, list[dict[str, Any]], list[dict[str, Any]], dict[str, list[float]]]:
+    """読み上げを間でつなぐ。最後の「ゆっくり」のあとに、まねする間（読み上げの長さ × shadow_ratio）と
+    予告の時間を足す。画像は 文 / 分解 / まねる・予告 の3つの区間で切り替える（paragraphs）。"""
+    sr = sample_rate
+    pieces = [np.zeros(int(round(pre_silence * sr)), dtype=np.float32)]
+    cursor = len(pieces[0])
+    entries: list[dict[str, Any]] = []
+    for step, clip in zip(steps, clips, strict=True):
+        start = cursor
+        pieces.append(clip.astype(np.float32))
+        cursor += len(clip)
+        entries.append({"role": step.role, "index": step.index, "text": step.text,
+                        "paragraph": {"sentence": 0, "chunk": 1, "repeat": 2}[step.role],
+                        "start": round(start / sr, 3), "end": round(cursor / sr, 3)})
+        if step.hold > 0:
+            pieces.append(np.zeros(int(round(step.hold * sr)), dtype=np.float32))
+            cursor += len(pieces[-1])
+    repeat = entries[-1]
+    shadow_len = (repeat["end"] - repeat["start"]) * shadow_ratio
+    tail = np.zeros(int(round((shadow_len + next_seconds) * sr)), dtype=np.float32)
+    pieces.append(tail)
+    total = (cursor + len(tail)) / sr
+    shadow = [repeat["end"], round(repeat["end"] + shadow_len, 3)]
+    lesson = {"shadow": shadow, "next": [shadow[1], round(total, 3)]}
+    paragraphs: list[dict[str, Any]] = []
+    for e in entries:
+        if paragraphs and paragraphs[-1]["index"] == e["paragraph"]:
+            paragraphs[-1]["end"] = e["end"]
+        else:
+            paragraphs.append({"index": e["paragraph"], "start": e["start"], "end": e["end"]})
+    paragraphs[-1]["end"] = round(total, 3)
+    return np.concatenate(pieces), entries, paragraphs, lesson
+
+
+def run_lesson(project: Project, story: Any, client: TtsClient | None,
+               log: Callable[[str], None]) -> None:
+    sentences = [s for p in story.paragraphs for s in split_sentences(p)]
+    if len(sentences) != 1 or not story.breakdown:
+        raise StoryTooLongError(
+            f"{story.id}：レッスン形式は、本文が1文で breakdown（かたまり）があるものだけです。"
+        )
+    voice = voices.resolve(project, story.voice or None)
+    cfg = {k: float(project.get(f"lesson.{k}", d)) for k, d in (
+        ("normal_speed", 1.0), ("slow_speed", 0.8), ("sentence_hold", 1.2),
+        ("chunk_hold", 3.5), ("shadow_ratio", 1.3), ("next_seconds", 3.0))}
+    settings = VoiceSettings(
+        speaker_id=voice.style_id, sample_rate=int(project.get("tts.sample_rate", 48000)),
+        pause_sentence=0.0, pause_paragraph=0.0,
+        pre_silence=float(project.get("tts.pre_silence")), post_silence=0.0,
+        intonation_scale=voice.intonation_scale,
+    )
+    if client is None:
+        words = userdict.load(project.path(project.get("tts.user_dict")))
+        client = voices.connect(voice, words, log)
+    steps = lesson_steps(sentences[0], story.breakdown, cfg)
+    log(f"{story.id}: 声 {voice.key}（{voice.credit}）, レッスン形式（かたまり {len(story.breakdown)} 個）")
+    clips = [_synthesize(client, client.audio_query(tts_text(s.text), settings.speaker_id), s.speed, settings)
+             for s in steps]
+    audio, entries, paragraphs, lesson = assemble_lesson(
+        steps, clips, settings.sample_rate, pre_silence=settings.pre_silence,
+        shadow_ratio=cfg["shadow_ratio"], next_seconds=cfg["next_seconds"])
+    duration = len(audio) / settings.sample_rate
+    max_seconds = float(project.get("tts.max_voice_seconds"))
+    if duration > max_seconds:
+        raise StoryTooLongError(
+            f"音声が {duration:.1f} 秒あり、上限 {max_seconds} 秒を超えています。"
+            "かたまりを減らすか、lesson.chunk_hold を短くしてください。"
+        )
+    out = project.work_dir(story.id)
+    sf.write(out / "voice.wav", audio, settings.sample_rate, subtype="PCM_16")
+    timing = {
+        "story_id": story.id, "voice": voice.key, "engine": voice.engine,
+        "style_id": voice.style_id, "credit": voice.credit, "format": "lesson",
+        "speed": cfg["slow_speed"], "intonation_scale": settings.intonation_scale,
+        "sample_rate": settings.sample_rate, "duration": round(duration, 3),
+        "paragraphs": paragraphs, "sentences": entries, "lesson": lesson,
+    }
+    (out / "timing.json").write_text(json.dumps(timing, ensure_ascii=False, indent=2), encoding="utf-8")
+    log(f"→ {out / 'voice.wav'}（{duration:.2f} 秒）")

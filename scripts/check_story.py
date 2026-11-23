@@ -19,16 +19,24 @@ from pathlib import Path
 ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents[1]).resolve()  # チャンネルごとの作業場所（channels/{name}/）
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from ai_shorts import userdict, voices  # noqa: E402
+from ai_shorts import ruby, userdict, voices  # noqa: E402
 from ai_shorts.config import load_project  # noqa: E402
 from ai_shorts.errors import AiShortsError  # noqa: E402
 from ai_shorts.story import split_paragraphs, split_sentences  # noqa: E402
 from ai_shorts.tts import tts_text  # noqa: E402
 
+# 既定は今のチャンネル（docs/story-guidelines.md）。チャンネルごとに config の story.* で変える
 BODY_MIN, BODY_MAX = 250, 280
 SENTENCE_MAX = 40
 HOOK_MAX = 15
 REQUIRED = ("id", "title", "hook", "body", "image_prompts", "tags", "approved")
+
+
+def limits(project) -> tuple[int, int, int, int]:
+    return (int(project.get("story.body_min_chars", BODY_MIN)),
+            int(project.get("story.body_max_chars", BODY_MAX)),
+            int(project.get("story.sentence_max_chars", SENTENCE_MAX)),
+            int(project.get("story.hook_max_chars", HOOK_MAX)))
 
 
 def find(arg: str) -> Path:
@@ -50,20 +58,49 @@ def check(path: Path, project, readings: bool) -> int:
             ng.append(f"項目 {k} がない")
     if d.get("id") != path.stem:
         ng.append(f"id（{d.get('id')}）とファイル名（{path.stem}）が違う")
+    body_min, body_max, sentence_max, hook_max = limits(project)
+    lesson = project.get("format", "story") == "lesson"
+    learner = lesson or project.get("subs.mode", "normal") == "learner"
     paras = split_paragraphs(d.get("body", ""))
-    n = sum(len(p) for p in paras)
+    n = sum(len(ruby.strip(p)) for p in paras)
     sentences = [s for p in paras for s in split_sentences(p)]
-    longest = max(sentences, key=len) if sentences else ""
-    if not BODY_MIN <= n <= BODY_MAX:
-        (ng if n > BODY_MAX + 10 or n < BODY_MIN - 40 else warn).append(f"本文 {n} 字（目安 {BODY_MIN}〜{BODY_MAX}）")
-    if not 2 <= len(paras) <= 3:
-        ng.append(f"段落 {len(paras)} 個（2〜3）")
-    if len(d.get("image_prompts", [])) != len(paras):
-        warn.append(f"image_prompts {len(d.get('image_prompts', []))} 個と段落 {len(paras)} 個の数が違う")
-    if len(longest) > SENTENCE_MAX:
-        ng.append(f"{SENTENCE_MAX} 字を超える文がある（{len(longest)} 字）: {longest}")
-    if len(d.get("hook", "")) > HOOK_MAX:
-        ng.append(f"hook {len(d['hook'])} 字（{HOOK_MAX} 字以内）")
+    longest = max((ruby.strip(s) for s in sentences), key=len) if sentences else ""
+    chunks = [c.get("ja", "") for c in d.get("breakdown", [])]
+    if lesson:
+        # レッスン形式（D-020）：1本で1文。かたまりに分けて、つなげると元の文になる
+        if len(sentences) != 1:
+            ng.append(f"本文が {len(sentences)} 文（レッスン形式は1文）")
+        if not 2 <= len(chunks) <= 5:
+            ng.append(f"かたまり（breakdown）が {len(chunks)} 個（2〜5）")
+        if any(not c.get("ja") or not c.get("en") for c in d.get("breakdown", [])):
+            ng.append("breakdown に ja か en のないものがある")
+        drop = str.maketrans("", "", "、。「」『』！？")
+        joined = "".join(ruby.strip(c) for c in chunks).translate(drop)
+        if sentences and joined != ruby.strip(sentences[0]).translate(drop):
+            ng.append(f"かたまりをつなげても本文にならない: {joined}")
+        if len(d.get("image_prompts", [])) != 3:
+            warn.append("image_prompts は3つ（今日の1文 / 分解 / まねる）")
+    else:
+        if not body_min <= n <= body_max:
+            (ng if n > body_max + 10 or n < body_min - 40 else warn).append(f"本文 {n} 字（目安 {body_min}〜{body_max}）")
+        if not 2 <= len(paras) <= 3:
+            ng.append(f"段落 {len(paras)} 個（2〜3）")
+        if len(d.get("image_prompts", [])) != len(paras):
+            warn.append(f"image_prompts {len(d.get('image_prompts', []))} 個と段落 {len(paras)} 個の数が違う")
+    if len(longest) > sentence_max:
+        ng.append(f"{sentence_max} 字を超える文がある（{len(longest)} 字）: {longest}")
+    if len(d.get("hook", "")) > hook_max:
+        ng.append(f"hook {len(d['hook'])} 字（{hook_max} 字以内）")
+    if learner:
+        # 学習者向け：すべての漢字にルビ、文ごとに英訳（docs/decisions.md D-018）
+        bare = sorted({c for s in sentences + chunks for c in ruby.uncovered_kanji(s)})
+        if bare:
+            ng.append(f"ルビのない漢字がある: {''.join(bare)}")
+        tr = d.get("translations", [])
+        if len(tr) != len(sentences):
+            ng.append(f"英訳 {len(tr)} 文と本文 {len(sentences)} 文の数が違う")
+        elif any(not t.strip() for t in tr):
+            ng.append("空の英訳がある")
     voice = None
     try:
         voice = voices.resolve(project, d.get("voice") or None)
@@ -85,13 +122,20 @@ def check(path: Path, project, readings: bool) -> int:
     if readings and voice:
         client = voices.connect(voice, userdict.load(project.path(project.get("tts.user_dict"))), lambda m: None)
         print("   読み（/ はアクセント句の区切り。VOICEVOX 互換は ' がアクセント位置）:")
-        for s in sentences:
+        mismatched = []
+        for s in sentences + chunks:
             text = tts_text(s)
             if voice.engine_type == "coeiroink":
                 r = client.reading(text)
             else:
                 r = client.audio_query(text, voice.style_id)["kana"]
             print(f"     {s}\n       → {r}")
+            if learner:
+                mismatched += ruby.missing_readings(s, r)
+        if mismatched:
+            # 学習者は読みをそのまま覚えるので、ルビと読み上げが違うものは出さない
+            print(f"   NG   読み上げがルビと違う（辞書で直すか、ルビを直す）: {' '.join(mismatched)}")
+            ng.append("読み上げがルビと違う")
     return 1 if ng else 0
 
 

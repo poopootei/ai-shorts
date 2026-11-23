@@ -25,6 +25,12 @@ class Story:
     notes: str = ""
     voice: str = ""  # config.yaml の voices のキー。空なら tts.default_voice
     source: str = ""  # 出典（青空文庫の作品など）。あれば説明文に「出典：」で出す
+    # 学習者向け（subs.mode: learner）：文ごとの英訳。本文の文と同じ数・同じ順
+    translations: list[str] = field(default_factory=list)
+    # レッスン形式（format: lesson）：本文の1文を分けたかたまり [{"ja": ルビ付き, "en": 意味, "note": 文法のメモ}]
+    breakdown: list[dict] = field(default_factory=list)
+    next: str = ""   # 最後に出す「次の1文」の予告（英語）。about があればそちらを出す
+    about: str = ""  # 最後に出す、作品の出典と背景の一文（英語）。見出しは About this story
 
     @property
     def paragraphs(self) -> list[str]:
