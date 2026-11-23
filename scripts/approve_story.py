@@ -1,9 +1,9 @@
-"""人が承認した物語を stories/draft/ から stories/approved/ に移す。
+"""検査に通った物語を stories/draft/ から stories/approved/ に移す。
 
-    python scripts/approve_story.py 20261120-001 --note "オチを1文短くした" [--voice ofutonp]
+    python scripts/approve_story.py 20261120-001 [--note "オチを1文短くした"] [--voice ofutonp]
 
-**ユーザーが承認したときだけ実行する**（CLAUDE.md の決まり 6。Claude が自分で承認しない）。
-approved: true にし、notes の先頭に「YYYY-MM-DD ユーザーが承認」と、直した点を書く（history にも残す）。
+物語CHECK はしない（docs/decisions.md D-018）。Claude が書いて検査に通したら実行し、人は動画CHECK で判断する。
+approved: true にし、notes の先頭に「YYYY-MM-DD 承認」と、直した点を書く（history にも残す）。
 ボツにするときは `python -m ai_shorts reject-story <id> --reason ... --idea ...`。
 """
 
@@ -23,7 +23,7 @@ ROOT = Path(os.environ.get("AI_SHORTS_ROOT") or Path(__file__).resolve().parents
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("ids", nargs="+")
-    ap.add_argument("--note", default="本文の修正なし", help="人が直した点（notes に残る）")
+    ap.add_argument("--note", default="検査に合格。物語CHECK なし（D-018）", help="直した点など（notes に残る）")
     ap.add_argument("--voice", help="声を決めたときに上書きする（config.yaml の voices のキー）")
     args = ap.parse_args()
 
@@ -38,7 +38,7 @@ def main() -> None:
         if args.voice:
             d["voice"] = args.voice
         d["approved"] = True
-        d["notes"] = f"{dt.date.today().isoformat()} ユーザーが承認（{args.note}）。" + (d.get("notes") or "")
+        d["notes"] = f"{dt.date.today().isoformat()} 承認（{args.note}）。" + (d.get("notes") or "")
         # 経緯は history に残す（python -m ai_shorts status / ideas が読む）
         d.setdefault("history", []).append(
             {"date": dt.date.today().isoformat(), "event": "story_approved", "note": args.note})

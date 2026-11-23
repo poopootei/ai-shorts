@@ -1,0 +1,31 @@
+{
+  "id": "20261123-009",
+  "title": "正直な八百屋",
+  "hook": "値札は、うそをつかない",
+  "body": "駅前の八百屋の値札には、本当のことしか書いていない。「このトマトは、きのうの売れ残りです」。「このキャベツは、となりの店のほうが安いです」。「この大根は、正直、あまりおいしくありません」。\nはじめは誰もが笑ったが、そのうち客が集まりだした。うそをつかない店なら、安心して買えるからだ。わざわざ電車に乗って、遠くから来る人もいた。店はいつも行列で、店主は毎日、うれしそうに値札を書いた。\nある朝、店のシャッターが下りたままだった。真ん中に、いつもの字で、一枚のはり紙があった。「閉店します。正直に言うと、もう働かなくていいくらい、もうかりました」。",
+  "image_prompts": [
+    "vegetables with handwritten price tags",
+    "a busy vegetable shop",
+    "a closed shop shutter in the morning"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ブラックユーモア"
+  ],
+  "voice": "ofutonp_yorokobi",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の検索語の候補: vegetable market / greengrocer / shop shutter",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}

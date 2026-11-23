@@ -2,7 +2,8 @@
 
 文を1行 max_chars_per_line 字以内に区切り、文の時間を字数に比例して割り振る。
 区切る位置は、句読点の後と「ひらがな → 漢字・カタカナ」の切れ目（文節の切れ目に近い）から選び、
-行の長さがそろうようにする。冒頭 hook_seconds 秒は hook を大きく出す。
+行の長さがそろうようにする。「っ」の後（引っ越す）では切らず、漢字の前の「お」「ご」は次の語に付ける。
+長いひらがなの続きは助詞の後で切り、「この」で行を終えたり漢字1字で行を始めたりしないようにする。冒頭 hook_seconds 秒は hook を大きく出す。
 hook_alone なら hook は最初の文が始まるまでに消し、本文の字幕と重ねない（D-013）。
 hook_box なら hook を半透明の帯で囲み、本文と見た目でも区別する。
 subs.json は qa が行の長さと位置を検査するのに使う。
@@ -21,13 +22,27 @@ from .errors import AiShortsError
 from .story import load_approved
 
 BREAK_AFTER = "、。，．！？!?」』）)…"
-NO_LINE_START = BREAK_AFTER + "ーぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ・"
+SMALL_KANA = "ぁぃぅぇぉっゃゅょゎ"
+NO_LINE_START = BREAK_AFTER + "ー" + SMALL_KANA + "ァィゥェォッャュョヮ・"
 OPEN_QUOTES, CLOSE_QUOTES = "「『", "」』"
+# 漢字の前の「お」「ご」は接頭語として次の語に付ける（「迷子の｜お知らせ」「一階で｜お待ち」）。
+PREFIXES = "おご"
+# 送りがなの後に付いて一語になる漢字（生き物・話し方・置き場）。この前では切らない。
+COMPOUND_TAILS = "物方場"
+PARTICLES = "のがはをにでともへや"
+# 漢字1字＋この送りがな1字＋漢字は、複合語として切らない（売れ残り・見上げた・思い出・吸い上げ）。
+CONTINUATIVE = "いきしちひびみりぎじえけせねべめれげ"
+# 長いひらがなの続きを字数で切るときは、この字の後を選ぶ（前の組ほど優先。「やって｜くるでしょう」「おいしく｜ありません」）。
+SPLIT_AFTER_TIERS = ("てを", "にがはとも", "で", "く")
+DETERMINERS = ("この", "その", "あの", "どの")
 # 行の区切り方のコスト。行の余り字数 s に対して s + s²/max_chars（行が少なく、長さがそろうほど安い）に、次の罰を足す。
 # 句読点以外で切ると、1行増やすより高くつくようにしてある（「背を｜測り」より「、」で切る）。
 NOT_AT_PUNCT_PENALTY = 30
 INSIDE_QUOTE_PENALTY = 25     # かぎかっこの途中で切る（「少し｜休んで」）
 PARTICLE_START_PENALTY = 28   # 」のすぐ後の助詞で行が始まる（「勇気」｜を押した）
+DETERMINER_END_PENALTY = 50   # 「この」「その」で行が終わる（今日が、この｜町の明日）
+LONE_KANJI_START_PENALTY = 30  # 漢字1字と句読点だけで行が始まる（男の｜子。）
+PAST_PERIOD_PENALTY = 30      # 行の中の「。」の後を句読点以外で切る（くるでしょう。娘の｜町の）
 
 
 @dataclass
@@ -46,6 +61,39 @@ def _is_hiragana(c: str) -> bool:
     return "ぁ" <= c <= "ゟ"
 
 
+def _is_kanji(c: str) -> bool:
+    return "一" <= c <= "鿿" or c == "々"
+
+
+def _split_long(a: str, max_chars: int) -> list[str]:
+    """max_chars を超える単位を切る。行頭に来てはいけない字の前では切らず、ひらがなは助詞の後を選ぶ。
+
+    助詞がなければ漢字 → ひらがなの切れ目（最後尾｜だったんですか）。どちらもなければ字数で切るが、
+    どの切り方でも、次の行がかっこ・句読点を除いて2字以下になるもの（だったんです｜か」、
+    うまって｜いる）は、ほかに切れ目があれば避ける。
+    """
+    result: list[str] = []
+    while len(a) > max_chars:
+        ks = [k for k in range(1, max_chars + 1) if a[k] not in NO_LINE_START]
+        roomy = [k for k in ks if len(a[k:].rstrip(BREAK_AFTER)) > 2]
+        cands = roomy or ks
+        k = 0
+        for tier in SPLIT_AFTER_TIERS:
+            good = [k for k in cands if k >= 2 and a[k - 1] in tier and _is_hiragana(a[k])]
+            if good:
+                k = max(good)
+                break
+        if not k:
+            good = [k for k in cands if _is_kanji(a[k - 1]) and _is_hiragana(a[k])]
+            k = max(good) if good else 0
+        if not k:
+            k = max(cands) if cands else max_chars
+        result.append(a[:k])
+        a = a[k:]
+    result.append(a)
+    return result
+
+
 def display_text(sentence: str) -> str:
     """字幕では文末の「。」を出さない（「。」」のようにかっこの中は残す）。ルビは外す。"""
     return ruby.strip(sentence).rstrip("。")
@@ -60,8 +108,19 @@ def atoms(text: str, max_chars: int) -> list[str]:
         nxt = text[i + 1] if i + 1 < len(text) else ""
         if not nxt:
             break
+        after = text[i + 2] if i + 2 < len(text) else ""
+        # 語の頭の「お」「ご」（「お世話」「迷子の｜お知らせ」）。ひらがなの続きの中の「お」は除く
+        is_prefix = c in PREFIXES and _is_kanji(nxt) and (len(cur) == 1 or not _is_hiragana(cur[-2]))
+        # 漢字＋送りがな（1〜2字）＋「物」などは一語（生き物・落とし物）。助詞の後（犬が｜物を）は除く
+        is_compound = (nxt in COMPOUND_TAILS and c not in PARTICLES
+                       and any(_is_kanji(x) for x in cur[-3:-1])) or (
+            c in CONTINUATIVE and _is_kanji(nxt) and len(cur) >= 2 and _is_kanji(cur[-2]))
         boundary = (c in BREAK_AFTER and nxt not in BREAK_AFTER) or (
-            _is_hiragana(c) and not _is_hiragana(nxt) and nxt not in NO_LINE_START
+            # 「っ」の後（引っ越す）と接頭語の後（お知らせ）では切らない
+            _is_hiragana(c) and c not in SMALL_KANA and not is_prefix and not is_compound
+            and not _is_hiragana(nxt) and nxt not in NO_LINE_START
+        ) or (
+            _is_hiragana(c) and nxt in PREFIXES and _is_kanji(after)
         )
         if boundary:
             out.append(cur)
@@ -70,10 +129,7 @@ def atoms(text: str, max_chars: int) -> list[str]:
         out.append(cur)
     result: list[str] = []
     for a in out:
-        while len(a) > max_chars:
-            result.append(a[:max_chars])
-            a = a[max_chars:]
-        result.append(a)
+        result.extend(_split_long(a, max_chars))
     return result
 
 
@@ -98,6 +154,11 @@ def wrap(text: str, max_chars: int) -> list[str]:
             cost += INSIDE_QUOTE_PENALTY
         if last in CLOSE_QUOTES and _is_hiragana(nxt):
             cost += PARTICLE_START_PENALTY
+        if parts[j - 1] in DETERMINERS:
+            cost += DETERMINER_END_PENALTY
+        head = parts[j].rstrip(BREAK_AFTER)
+        if len(head) == 1 and _is_kanji(head) and head != parts[j]:
+            cost += LONE_KANJI_START_PENALTY
         return cost
 
     best: list[tuple[float, int]] = [(0.0, -1)] + [(math.inf, -1)] * n
@@ -109,6 +170,8 @@ def wrap(text: str, max_chars: int) -> list[str]:
                 break
             slack = max_chars - length
             cost = best[i][0] + slack + slack * slack / max_chars + break_cost(j)
+            if j < n and parts[j - 1][-1] not in BREAK_AFTER and any("。" in p for p in parts[i:j]):
+                cost += PAST_PERIOD_PENALTY
             if cost < best[j][0]:
                 best[j] = (cost, i)
     lines: list[str] = []

@@ -24,6 +24,8 @@ engines:
 voices:
   ofutonp:           {engine: coeiroink,   style_id: 2,  credit: "COEIROINK:おふとんP"}        # 男性・のーまるv2
   ofutonp_kanashimi: {engine: coeiroink,   style_id: 9,  credit: "COEIROINK:おふとんP"}        # 男性・かなしみ
+  ofutonp_yorokobi:  {engine: coeiroink,   style_id: 21, credit: "COEIROINK:おふとんP"}        # 男性・よろこび
+  ofutonp_aseri:     {engine: coeiroink,   style_id: 20, credit: "COEIROINK:おふとんP"}        # 男性・あせり（聞き取りにくい。新しい物語には選ばない）
   tsukuyomi:         {engine: coeiroink,   style_id: 0,  credit: "COEIROINK:つくよみちゃん"}  # 女性・れいせい
   aida:              {engine: aivisspeech, style_id: 1310138976, credit: "AivisSpeech:阿井田 茂"}  # 男性・ノーマル（ACML 1.0、表記は任意）
   aida_calm:         {engine: aivisspeech, style_id: 1310138977, credit: "AivisSpeech:阿井田 茂"}  # 男性・Calm
@@ -79,3 +81,22 @@ bgm:
   path: assets/bgm/track01.wav
   gain_db: -18              # Content ID の検出テストで決める（-14 / -18 / -22）
   start_seconds: 0          # 曲の頭から使う
+
+# YouTube への予約投稿（python -m ai_shorts upload、D-015）。認証情報は secrets/ に置き、git に入れない
+youtube:
+  client_secret: secrets/youtube_client_secret.json  # Google Cloud の OAuth クライアント（デスクトップアプリ）
+  token: secrets/youtube_token.json                   # 初回ログイン（youtube-login）で作られる
+  publish_time: "18:00"     # 公開の時刻。1 日 1 本（引用符で囲む）
+  utc_offset: "+09:00"      # publish_time のタイムゾーン（日本時間）
+  min_lead_minutes: 60      # 今から最低これだけ先の枠に入れる
+  category_id: 24           # 24 = エンターテイメント
+  language: ja
+  made_for_kids: false
+  contains_synthetic_media: false   # 「改変または合成されたコンテンツ」の申告。実在の人や出来事に見えるものではないので false（D-015）
+
+# タブレットへの受け渡し（python -m ai_shorts share、D-016）。MiniPC で share_app/server.py が動く（LAN 専用）
+share:
+  host: lenovo                          # ssh の接続先（~/.ssh/config の Host 名）
+  remote_dir: projects/ai-shorts-share  # MiniPC のホームからの場所（server.py と data/ を置く）
+  port: 8040
+  url: http://192.168.1.7:8040/         # タブレットで開くアドレス

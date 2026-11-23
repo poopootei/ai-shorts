@@ -17,7 +17,65 @@ def test_atoms_do_not_start_line_with_small_kana_or_long_vowel():
 
 
 def test_atoms_hard_split_long_run():
-    assert atoms("アイウエオカキクケコサシスセソタチ", 15) == ["アイウエオカキクケコサシスセソ", "タチ"]
+    # 2字だけ次の行に回さない（「タチ」→「ソタチ」）
+    assert atoms("アイウエオカキクケコサシスセソタチ", 15) == ["アイウエオカキクケコサシスセ", "ソタチ"]
+
+
+def test_atoms_do_not_break_after_small_tsu():
+    assert "引っ越して" in "|".join(atoms("うちのとなりに引っ越してきまして", 10)).split("|")[1]
+
+
+def test_atoms_keep_honorific_prefix_with_next_word():
+    assert atoms("迷子のお知らせ", 10) == ["迷子の", "お知らせ"]
+    assert atoms("一階でお待ちです", 10) == ["一階で", "お待ちです"]
+    assert atoms("「お世話になりました。", 10) == ["「お世話に", "なりました。"]
+
+
+def test_atoms_keep_okurigana_compounds():
+    assert atoms("「この星の生き物を調べる」", 10) == ["「この", "星の", "生き物を", "調べる」"]
+    assert atoms("落とし物を拾った", 10) == ["落とし物を", "拾った"]
+    assert atoms("犬が物を運ぶ", 10) == ["犬が", "物を", "運ぶ"]
+
+
+def test_atoms_keep_compound_verbs_and_nouns():
+    assert atoms("きのうの売れ残りです", 10) == ["きのうの", "売れ残りです"]
+    assert atoms("空を見上げた", 10) == ["空を", "見上げた"]
+
+
+def test_atoms_split_long_hiragana_after_adverbial_ku():
+    assert atoms("あまりおいしくありません」", 10) == ["あまりおいしく", "ありません」"]
+
+
+def test_wrap_does_not_carry_on_past_period_then_break_mid_phrase():
+    lines = wrap("「天気は、西からやってくるでしょう。娘の町の今日が、この町の明日なんです」", 10)
+    assert "くるでしょう。" in lines
+    assert "娘の町の今日が、" in lines
+
+
+def test_atoms_split_long_hiragana_after_particle():
+    assert atoms("西からやってくるでしょう。", 10) == ["西からやって", "くるでしょう。"]
+
+
+def test_atoms_split_long_at_kanji_to_hiragana_without_particle():
+    assert atoms("最後尾だったんですか」", 10) == ["最後尾", "だったんですか」"]
+
+
+def test_atoms_particle_split_does_not_leave_tiny_tail():
+    assert atoms("半年先までうまっている", 10) == ["半年先まで", "うまっている"]
+
+
+def test_atoms_hard_split_does_not_leave_tiny_tail():
+    assert atoms("アイウエオカキクケコサ」", 10) == ["アイウエオカキク", "ケコサ」"]
+
+
+def test_wrap_does_not_end_line_with_determiner():
+    lines = wrap("娘の町の今日が、この町の明日なんです」", 10)
+    assert all(not line.endswith("この") for line in lines)
+    assert all(len(line) <= 10 for line in lines)
+
+
+def test_wrap_does_not_start_line_with_lone_kanji():
+    assert wrap("しらがまじりの男の子。お母さまが、", 10) == ["しらがまじりの", "男の子。お母さまが、"]
 
 
 def test_wrap_respects_limit_and_prefers_punctuation():

@@ -1,0 +1,36 @@
+{
+  "id": "20261121-006",
+  "title": "迷子のお知らせ",
+  "hook": "白髪まじりの迷子",
+  "body": "「迷子のお知らせをいたします」。デパートの店内に、放送が流れた。「青い制服を着た、しらがまじりの男の子。お母さまが、一階でお待ちです」。売り場の同僚たちが、いっせいに俺を見た。青い制服で、しらがまじりなのは、俺ひとりだった。\n一階のカウンターに行くと、小さな母が座っていた。ひざの上には、ふろしきの包みがのっている。「あんた、電話にも出ないし、お正月にも帰ってこないから」。\n母は包みを差し出した。中身は、俺の好きだった卵焼きの弁当だった。それから母は、係の人に深々と頭を下げた。「お世話になりました。この子、三年ほど迷子だったもので」。",
+  "image_prompts": [
+    "a department store interior with shoppers",
+    "an information counter in a department store",
+    "a japanese bento lunch box with rolled omelette"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ほっこり"
+  ],
+  "voice": "ofutonp",
+  "approved": true,
+  "notes": "2026-11-21 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: department store / information desk / bento tamagoyaki",
+  "history": [
+    {
+      "date": "2026-11-21",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "video_approved",
+      "note": "OK"
+    },
+    {
+      "date": "2026-11-22",
+      "event": "posted",
+      "platform": "youtube"
+    }
+  ]
+}

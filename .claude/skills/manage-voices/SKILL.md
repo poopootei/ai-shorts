@@ -16,7 +16,7 @@ description: ai-shorts の読み上げの声を選ぶ・聞き比べる・足す
 
 - 物語 JSON の `"voice"` を `config.yaml` の `voices` のキーにする。書かなければ `tts.default_voice`。
 - 承認済みの物語でも声だけなら変えてよいが、変えたことは伝える。反映は `py -m ai_shorts all --id <id>`（声が変わると長さも変わる）。
-- いまの声：ofutonp（男性・既定）、ofutonp_kanashimi、tsukuyomi（女性）、aida・aida_calm（男性）。ユーザーが NG とした声（VOICEVOX の冥鳴ひまり、AivisSpeech のまお・コハク・fumifumi）は使わない。
+- いまの声：ofutonp（男性・既定）、ofutonp_kanashimi・ofutonp_yorokobi（スタイル違い。ofutonp_aseri は「聞き取りにくい」とユーザーが言ったので選ばない）、tsukuyomi（女性）。新しい物語は COEIROINK だけ（D-017）。aida・aida_calm（AivisSpeech）は作り直し・比較用に残してある。ユーザーが NG とした声（VOICEVOX の冥鳴ひまり、AivisSpeech のまお・コハク・fumifumi）は使わない。
 
 ## 聞き比べ
 

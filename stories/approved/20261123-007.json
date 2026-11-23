@@ -1,0 +1,31 @@
+{
+  "id": "20261123-007",
+  "title": "思い出の質屋",
+  "hook": "初恋、預かれません",
+  "body": "町のはずれに、思い出を預かって、お金を貸してくれる店がある。古い木の扉に、小さな看板がかかっているだけの店だ。お金に困った私は、初恋の思い出を持っていった。\n店主は虫めがねで、思い出をじっと見た。それから、首を横にふった。「これは、お預かりできません」。どうしてですか、と私は聞いた。「同じ思い出を、先週、相手の方が預けていかれました」。店主は、帳面をめくりながら続けた。「片方しか覚えていない思い出には、値がつかないんです」。\n帰りぎわ、ふと棚を見上げた。小さな瓶に、あの人の名前を書いた紙が、はってあった。中の思い出は、私が覚えているより、ずっと色あせていた。",
+  "image_prompts": [
+    "an old antique shop on a quiet street",
+    "a magnifying glass on a wooden counter",
+    "small glass jars on a dusty shelf"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "日常の不思議"
+  ],
+  "voice": "tsukuyomi",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の検索語の候補: antique shop / magnifying glass / glass jars shelf",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}

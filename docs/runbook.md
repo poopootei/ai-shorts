@@ -49,12 +49,12 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 ## 3. 1本（または数本）作る流れ
 
 ```
-物語 → 物語CHECK（人）→ 背景 → 合成・QA → 動画CHECK（人）→ 投稿（人）→ 記録
+物語（Claude が書いて検査・承認）→ 背景 → 合成・QA → 動画CHECK（人）→ 投稿（人）→ 記録
 ```
 
 | 状態 | 物語 | 動画 | 次にやること |
 |---|---|---|---|
-| 物語CHECK待ち | `stories/draft/` | – | 全文を読んで承認かボツ |
+| 下書き | `stories/draft/` | – | 検査に通して approve_story.py で承認（物語CHECK はしない） |
 | 動画づくり待ち／QA NG | `stories/approved/` | `work/<id>/` | 背景を選んで合成 |
 | 動画CHECK待ち | `stories/approved/` | `ready/` | スマホで見て OK かボツ |
 | 投稿待ち | `stories/approved/` | `upload/` | YouTube Studio で投稿 |
@@ -72,12 +72,11 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 - 検査：`.venv\Scripts\python scripts\check_story.py stories\draft\<id>.json --readings`
   - NG を直す。読み間違いは 5 の手順で辞書に足す（辞書で直らないものは文を書き換える）。
 
-### 3-2. 承認（人）
-- 下書きの全文をユーザーに見せて、承認をもらう。**Claude が自分で承認しない**（CLAUDE.md の決まり 6）。
-- 承認されたら：`.venv\Scripts\python scripts\approve_story.py <id> --note "直した点"`（直していなければ `--note` は省略）
-  - 検査に NG があると承認されず draft に残る。
-- ボツなら：`.venv\Scripts\python -m ai_shorts reject-story <id> --reason "理由" --idea "改善案"` → `stories/rejected/`。消さずに改善案としてためる。
-  - 直して出し直すときは `revive-story <id>` で draft に戻し、もう一度承認を求める。
+### 3-2. 承認（Claude。物語CHECK はしない）
+- 人の確認は動画CHECK だけ（decisions.md D-018）。Claude が story-guidelines.md の確認点を見て直し、検査に通ったら承認する。
+- `.venv\Scripts\python scripts\approve_story.py <id> [<id> ...]`（検査に NG があると承認されず draft に残る）
+- 書いてみてやめる物語は：`.venv\Scripts\python -m ai_shorts reject-story <id> --reason "理由" --idea "改善案"` → `stories/rejected/`。
+  - 動画CHECK で物語ごとボツになったら `reject-video <id> ... --drop`（3-5）。直して出し直すときは `revive-story <id>` で draft に戻す。
 
 ### 3-3. 背景画像（ComfyUI ができるまでの仮。D-008）
 1. 候補を並べる：`.venv\Scripts\python scripts\preview_backgrounds.py --name <id> "検索語1" "検索語2" "検索語3"`
@@ -100,12 +99,45 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 - ボツなら：`.venv\Scripts\python -m ai_shorts reject-video <id> --reason "理由" --idea "改善案" --remake`
   - 動画は `rejected/<id>-<n>.mp4` に残る（n は何回目のボツか）。`--remake` は物語を approved に残して作り直す。`--drop` は物語ごとボツ。
 
-### 3-6. 投稿（人が手動で）
-- YouTube Studio で `upload/<id>.mp4` を上げ、説明欄に `upload/<id>.txt` を貼る。自動投稿はしない（D-003）。
+### 3-6. 投稿（予約投稿）
+投稿するのは、ユーザーが「投稿して」と言ったときだけ（CLAUDE.md の2、D-015）。
+
+はじめに一度だけ（ユーザーが行う）：
+1. Google Cloud Console でプロジェクトを作り、「YouTube Data API v3」を有効にする。
+2. OAuth 同意画面（Google Auth Platform）を作る。対象は「外部」。公開ステータスを「本番環境」にする（「テスト」のままだとログインが 7 日で切れる）。Google の確認（審査）は申し込まなくてよい。
+3. OAuth クライアント ID を作る（種類は「デスクトップ アプリ」）。JSON をダウンロードして `secrets/youtube_client_secret.json` に置く（`secrets/` は git 管理外）。
+4. `config.example.yaml` の `youtube:` を `config.yaml` にコピーし、公開時刻（`publish_time`）などを決める。
+5. `.venv\Scripts\python -m pip install -r requirements.txt`
+6. `.venv\Scripts\python -m ai_shorts youtube-login` → ブラウザでチャンネルの Google アカウントを選ぶ。「Google はこのアプリを確認していません」と出たら「詳細」→「（アプリ名）に移動」。`secrets/youtube_token.json` ができる。
+
+投稿するとき：
+- まず予定を見せる：`.venv\Scripts\python -m ai_shorts upload --all --dry-run`（id を並べてもよい。公開はその順に 1 日 1 本）。外部には何も送らない。
+- 了承をもらったら `--dry-run` を外して実行する。1 本ずつ上げて、`posted` の記録（URL・公開日）まで行う。途中で止まったら、残りは `upload/` に残る（記録したものが二重に上がることはない）。
+- 公開日は、これまでの YouTube の公開日（`stories/posted/` の history）の翌日から。早くても今から `min_lead_minutes` 先の枠。`--start YYYY-MM-DD` で決めてもよい。
+- 上げたら YouTube Studio で、予約の日時と、ショートとして扱われているかを確かめる。Studio で公開日を変えたら、`stories/posted/<id>.json` の history の date も直す。
+- **BGM の Content ID は公開前に確かめる。** Content ID はアップロードした時点で調べられるので、非公開・予約のままでも結果が出る。API からは読めないので Studio で見る。終わるまでの時間は決まっていないので、公開の1日以上前に上げておく。
+  1. Studio →「コンテンツ」→「ショート」タブ → フィルタで「申し立て」。
+  2. 「制限」の列の「申し立て」にカーソルを当てて「詳細を表示」→「使用されているコンテンツ」の「詳細を表示」。
+  3. 正しく紐づいていれば、自分の曲名・申し立て者（TuneCore Japan など）・対応「収益化」が出る。
+  - 申し立てがない：検出されていない（BGM の音量が小さい、登録がまだ有効でない、など）。曲の別の部分や別の権利者が出ている：BGM を見直す。どちらも、公開日までに Studio で予約を外すか日時をずらし、ユーザーと対応を決める。
+  - 動画は59秒以下なので、申し立てが付いてもブロックはされない（ブロックされるのは1分を超えるショート）。
+  - 公開後に申し立てが付くこともある（YouTube からメールが来る）。
+- 「ログインが切れています」と出たら `youtube-login` をやり直す。
+
+手で上げるとき：YouTube Studio で `upload/<id>.mp4` を上げ、説明欄に `upload/<id>.txt` を貼る。そのあと 3-7 で記録する。
+
+タブレットから上げるとき（D-016）：
+1. `.venv\Scripts\python -m ai_shorts share` で `upload/` を MiniPC に送る（初回と `share_app/server.py` を変えたときは `--install` を付ける）。
+2. タブレットのブラウザで `share.url`（http://192.168.1.7:8040/）を開く。「動画を保存」で mp4 を保存し、YouTube アプリで上げる。タイトル・説明文は「コピー」で貼る。予約の日時の目安も出る（`youtube:` の設定があるとき）。
+3. 上げたら「投稿した」で公開日（予約なら公開される日）と URL を送る。見てやめるなら「ボツ」で理由・改善案・作り直すか物語ごとかを送る。次の `share` がこのPCの記録にして（`posted` / `reject-video` と同じ）、MiniPC から消す。`share` までは「取り消す」で戻せる。
+   - ボツで改善案が空なら記録されず、`share` が「要対応」と出す。改善案を決めて `reject-video` で記録する。
+   - 記録が増えるので、`share` のあとはコミットする。
+- 接続できないとき：MiniPC が起きているか、`ssh lenovo` が通るかを見る。ページが開かないときは MiniPC で `systemctl --user status ai-shorts-share`。
+- iPad の Safari では、保存した動画は「ファイル」に入る。YouTube アプリで選ぶには、共有メニューの「ビデオを保存」で写真に入れる。
 - BGM：方針は自作 BGM（`assets/bgm/`、[bgm.md](bgm.md)）。Studio のエディタ（「音声」）で後付けできるのは YouTube オーディオライブラリの曲だけで、自作曲の Content ID 収益にはつながらない。
 
 ### 3-7. 投稿の記録
-- 投稿したら：`.venv\Scripts\python -m ai_shorts posted <id> --platform youtube --url <URL> [--date 公開日]`
+- `upload` で上げたものは記録済み。手で上げたとき・ほかの場所に上げたときは：`.venv\Scripts\python -m ai_shorts posted <id> --platform youtube --url <URL> [--date 公開日]`
   - mp4・txt は `posted/` へ、物語は `stories/posted/` へ移る。予約投稿なら `--date` は公開日。
   - ほかの場所にも上げたら、`--platform instagram` などでもう一度実行（記録が足されるだけ）。
 - `posted/`・`rejected/` の mp4 は git に入らない。消すとき・バックアップはユーザーが決める。
@@ -155,4 +187,5 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 
 - 有料 API は使わない。外部への通信は、ダウンロード（エンジン・声・フォント）と Openverse の画像検索・取得だけ。
 - AivisSpeech は必ず `--disable_sentry` で起動する（エラー情報の外部送信を切る）。
+- `share` は LAN の MiniPC に ssh で送るだけで、インターネットには出ない（D-016）。
 - アプリ内ブラウザで YouTube Music などを開くと音が鳴ることがある。調べ終わったらタブを閉じる。

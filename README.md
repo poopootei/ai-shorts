@@ -5,8 +5,8 @@ YouTube チャンネル「[ショートショートの世界へ](https://www.you
 中心は、AIで書いたショートショートを音声合成（COEIROINK / AivisSpeech）で朗読し、縦型ショート動画（YouTube Shorts / Instagram Reels）にするローカル制作パイプライン。
 
 - **すべてローカル・無料**（有料APIは使わない）
-- **自動化するのは mp4 ができるまで**。投稿は手動（YouTube Studio の予約投稿）。投稿したことは記録する
-- **人の CHECK を2回通す**：物語CHECK と 動画CHECK。ボツは理由と改善案を残して次に活かす
+- **投稿は頼んだときだけ**。動画CHECK に通ったものを `upload` で予約投稿し、投稿したことを記録する（YouTube Data API、権限は投稿だけ）
+- **人の CHECK は動画CHECK**：物語は Claude が書いて検査し、人は出来上がった動画で判断する（物語CHECK は D-018 でやめた）。ボツは理由と改善案を残して次に活かす
 - **主な収益源は BGM**：自作BGMを TuneCore Japan 経由で YouTube Content ID に登録し、動画での使用分を得る。ショート動画そのものの広告収益は狙わない
 
 方針の詳細は [docs/policy.md](docs/policy.md)、各工程の仕様は [docs/pipeline.md](docs/pipeline.md) を参照。
@@ -18,7 +18,7 @@ Claude Code では `.claude/skills/` のスキル（`make-shorts` ほか）が�
 | スクリプト | 用途 |
 |---|---|
 | `check_story.py` | 物語の検査（字数・文の長さ・hook・声）。`--readings` で読みも出す |
-| `approve_story.py` | 人が承認した物語を draft → approved に移す |
+| `approve_story.py` | 検査に通った物語を draft → approved に移す |
 | `preview_backgrounds.py` | 背景の候補シート（Openverse CC0/PDM、ID つき） |
 | `fetch_stock_images.py` | 背景を取って `work/{id}/img_N.png` に置く（`--query "id:..."`） |
 | `preview_video.py` | 完成動画の確認用コマ画像 |
@@ -31,15 +31,15 @@ Claude Code では `.claude/skills/` のスキル（`make-shorts` ほか）が�
 
 ```
 stories/draft/*.json      ← Claude Code セッションで物語を生成
-      │  物語CHECK（人）       ── ボツ → stories/rejected/（理由・改善案）
+      │  検査 → approve_story.py（Claude。物語CHECK はしない）
 stories/approved/*.json
       │  tts → images → subs → render → qa
 work/{id}/                ← 1本ごとの中間ファイル
       │  QA合格
 ready/{id}.mp4            ← 動画CHECK（人）── ボツ → rejected/{id}-{n}.mp4（作り直す or 物語ごとボツ）
       │  approve-video
-upload/{id}.mp4           ← 投稿待ち。人が YouTube Studio で投稿
-      │  posted（投稿を記録）
+upload/{id}.mp4           ← 投稿待ち
+      │  upload（予約投稿して記録。手で上げたら posted で記録）
 posted/{id}.mp4           ← 投稿済みの原本。物語は stories/posted/
 ```
 
@@ -99,8 +99,11 @@ python -m ai_shorts status                       # 状態ごとの一覧
 python -m ai_shorts ideas                        # ボツの理由と改善案
 python -m ai_shorts approve-video <id>           # 動画CHECK OK → upload/
 python -m ai_shorts reject-video  <id> --reason "..." --idea "..." --remake   # 作り直す（--drop で物語ごとボツ）
-python -m ai_shorts posted        <id> --platform youtube --url <URL>        # 投稿した → posted/
-python -m ai_shorts reject-story  <id> --reason "..." --idea "..."           # 物語CHECK でボツ
+python -m ai_shorts upload        --all --dry-run   # 公開の予定を見る（id を並べてもよい。1 日 1 本）
+python -m ai_shorts upload        --all             # YouTube に予約投稿して記録 → posted/
+python -m ai_shorts youtube-login                   # YouTube にログイン（初回・切れたとき）
+python -m ai_shorts posted        <id> --platform youtube --url <URL>        # 手で投稿した → posted/
+python -m ai_shorts reject-story  <id> --reason "..." --idea "..."           # 書いた物語をやめる
 python -m ai_shorts revive-story  <id>           # ボツの物語を直すため draft に戻す
 ```
 
@@ -120,13 +123,13 @@ ai-shorts/
 │   ├── policy.md          収益化・権利・プラットフォーム規約の方針
 │   ├── pipeline.md        工程ごとの仕様
 │   ├── bgm.md             BGM制作と TuneCore 申請のルール
-│   ├── story-guidelines.md 物語の書き方と人が確認する点
+│   ├── story-guidelines.md 物語の書き方と書いたあとに確かめる点
 │   ├── channel-ideas.md   新しいチャンネルの案（中身・いいところ・懸念点）
 │   ├── overseas-report.md 海外向けの狙い所（ジャンル・人気・競合の比較）
 │   └── decisions.md       決定事項の記録
 ├── stories/
-│   ├── draft/             生成直後（物語CHECK待ち）
-│   ├── approved/          物語CHECK 済み（動画づくり〜投稿待ち）
+│   ├── draft/             生成直後（検査待ち）
+│   ├── approved/          検査済み（動画づくり〜投稿待ち）
 │   ├── posted/            投稿済み
 │   └── rejected/          ボツ（理由・改善案つき）
 ├── work/{id}/             中間ファイル（git 管理外）

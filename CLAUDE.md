@@ -5,17 +5,17 @@
 ## チャンネル運用
 
 - チャンネルの情報（名前・URL・説明文・クレジットの載せ方・運用の方針）は [docs/channel.md](docs/channel.md) にまとめる。説明文などを変えたら、ここも更新する。
-- Claude は案を作り、記録を残すところまで。YouTube Studio での設定の変更や投稿は、ユーザーが手で行う（自動投稿・API は使わない。下の 2）。
+- Claude は案を作り、記録を残すところまで。YouTube Studio での設定の変更は、ユーザーが手で行う。投稿は、ユーザーが頼んだときに `upload` で予約投稿する（下の 2）。
 - 声を足したら、チャンネル説明文のクレジットも見直す。
 
 ## 絶対に守ること
 
 1. **有料APIを使わない。** LLM、TTS、画像生成はすべてローカルか Claude Code セッション内で済ませる。外部へのHTTP通信が必要な新しい依存を足す前に、ユーザーに確認する。
-2. **自動投稿は作らない。** 出力は `ready/{id}.mp4` まで。YouTube Data API は、審査を通っていないプロジェクトから投稿すると非公開に固定されるため使わない（docs/decisions.md D-003）。
+2. **投稿はユーザーが頼んだときだけ。** 動画CHECK に通った `upload/` の動画を、ユーザーが「投稿して」と言ったときに `python -m ai_shorts upload` で予約投稿する。先に `--dry-run` で公開の予定を見せて了承を得る。定期実行などで勝手に投稿する仕組みは作らない。YouTube Data API で使う権限は `youtube.upload` だけ（docs/decisions.md D-015）。
 3. **動画は59秒以下。** Content ID の申し立てが付いた1分超のショートはブロックされる。QA でここを必ず検査する。
 4. **BGM の作曲を Claude がしない。** メロディ・和音・構成はユーザーが決めたもの（MIDI）を使う。Claude が作ってよいのはシンセエンジン（音色、エンベロープ、エフェクト）とレンダリングのコードだけ。生成AI楽曲は TuneCore Japan の Content ID に登録できないため（docs/bgm.md）。
 5. **第三者の音源素材を BGM に入れない。** ループ、サンプルパック、SoundFont、効果音素材は使わない。音は numpy で合成して WAV に直接書き出す。
-6. **物語は人の承認を通す。** `approved: true` で `stories/approved/` にあるものだけを処理する。生成した物語を自動で承認しない。
+6. **人の確認は動画CHECK で通す。** 物語CHECK はしない（docs/decisions.md D-018）。Claude は物語を書いて `scripts/check_story.py` に通し、`scripts/approve_story.py` で `stories/approved/` に移して動画まで作る。処理するのは `approved: true` で `stories/approved/` にあるものだけ。動画を OK にするのはユーザーだけで、Claude が自分で OK にしない。
 7. **画像生成モデルは商用利用できるものだけ。** 新しいモデルを使う前に、ライセンスを docs/decisions.md に記録する。
 
 ## コードの方針
@@ -34,7 +34,7 @@ Claude Code では、依頼に合うスキル（`.claude/skills/`）を使って
 | 依頼 | スキル |
 |---|---|
 | 動画を作る・作り直す（全体） | `make-shorts` |
-| 動画CHECK・投稿の記録・ボツと改善案・状況の一覧 | `review-and-post` |
+| 動画CHECK・投稿（予約投稿）と記録・ボツと改善案・状況の一覧 | `review-and-post` |
 | 物語を書く・直す・承認する | `write-stories` |
 | 背景画像を選ぶ・差し替える | `pick-backgrounds` |
 | 読み間違い・アクセントを直す | `fix-readings` |
@@ -55,7 +55,7 @@ Claude Code では、依頼に合うスキル（`.claude/skills/`）を使って
 - **物語 (story)**: 250〜280字のショートショート。`stories/*/{id}.json`
 - **work/{id}/**: 1本分の中間ファイル置き場
 - **ready/**: QA に合格し、動画CHECK（人）を待つもの
-- **upload/**: 動画CHECK に合格し、投稿（人が手動）を待つもの
+- **upload/**: 動画CHECK に合格し、投稿を待つもの（ユーザーが頼んだら `upload` で予約投稿）
 - **posted/**: 投稿済みの原本。物語は `stories/posted/`
 - **ボツ**: 物語は `stories/rejected/`、動画は `rejected/{id}-{n}.mp4`。理由と改善案を物語 JSON の `history` に必ず残す
-- **流れ**: 物語 → 物語CHECK（人）→ 動画 → 動画CHECK（人）→ 投稿（人）。状態は `python -m ai_shorts status`、改善案は `python -m ai_shorts ideas`（docs/runbook.md 3）
+- **流れ**: 物語（Claude が書いて検査）→ 動画 → 動画CHECK（人）→ 投稿（人が頼んで `upload`）。状態は `python -m ai_shorts status`、改善案は `python -m ai_shorts ideas`（docs/runbook.md 3）

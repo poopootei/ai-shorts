@@ -9,14 +9,14 @@
 | 名前 | ショートショートの世界へ |
 | URL | https://www.youtube.com/@ショートショートの世界へ |
 | 内容 | 約1分で聴ける朗読ショートショート（YouTube Shorts） |
-| 投稿 | 手動。YouTube Studio の予約投稿で、毎日決まった時間に公開する（policy.md） |
+| 投稿 | 予約投稿で、毎日決まった時間に公開する。ユーザーが頼んだら `upload` で上げる（policy.md、decisions.md D-015） |
 | 収益 | 主に自作BGMの Content ID（bgm.md）。ショートの広告収益は狙わない |
 
 ## 運用の分担
 
-- Claude：説明文・プロフィール・タイトルなどの案づくり、投稿の記録、ボツと改善案の振り返り、方針の整理。
-- ユーザー：YouTube Studio での設定の変更と投稿。動画CHECK・物語CHECK の判断。
-- YouTube Data API や自動投稿は使わない（decisions.md D-003）。
+- Claude：説明文・プロフィール・タイトルなどの案づくり、予約投稿（ユーザーが頼んだとき、`upload`）と記録、ボツと改善案の振り返り、方針の整理。
+- ユーザー：YouTube Studio での設定の変更。動画CHECK と、投稿するかどうかの判断。
+- YouTube Data API は予約投稿だけに使う（権限は `youtube.upload` のみ。decisions.md D-015）。チャンネルの設定は API で変えない。
 
 ## チャンネル説明文
 

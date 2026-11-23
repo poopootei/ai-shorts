@@ -1,16 +1,18 @@
 """python -m ai_shorts <stage> --id <story_id>
 
 動画を作る工程（tts / subs / render / qa / all）と、状態の管理
-（status / ideas / approve-video / reject-video / posted / reject-story / revive-story）。
+（status / ideas / approve-video / reject-video / posted / reject-story / revive-story）、
+YouTube への予約投稿（upload / youtube-login）、タブレットへの受け渡し（share）。
 """
 
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import sys
 from typing import Callable
 
-from . import library, qa, render, subs, tts
+from . import library, qa, render, subs, tts, upload
 from .config import Project, load_project
 from .errors import AiShortsError
 from .story import list_approved
@@ -58,7 +60,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--url", default="", help="動画の URL")
     p.add_argument("--date", default="", help="投稿日（予約投稿なら公開日）YYYY-MM-DD。省略すると今日")
 
-    p = sub.add_parser("reject-story", help="物語CHECKでボツ：stories/draft → stories/rejected")
+    p = sub.add_parser("upload", help="投稿待ち（upload/）を YouTube に予約投稿し、posted で記録する")
+    p.add_argument("ids", nargs="*", help="物語の id（公開はこの順に 1 日 1 本）")
+    p.add_argument("--all", action="store_true", help="upload/ にあるものをすべて（id の順）")
+    p.add_argument("--start", default="", help="最初の公開日 YYYY-MM-DD。省略すると、これまでの公開日の翌日")
+    p.add_argument("--dry-run", action="store_true", help="公開の予定を表示するだけで、投稿しない")
+
+    sub.add_parser("youtube-login", help="YouTube にログインする（初回・ログインが切れたとき）")
+
+    p = sub.add_parser("share", help="投稿待ち（upload/）を MiniPC に送り、タブレットで保存・コピーできるようにする")
+    p.add_argument("--install", action="store_true", help="MiniPC にサーバーを置いて起動し直す（初回・server.py を変えたとき）")
+
+    p = sub.add_parser("reject-story", help="物語をボツにする：stories/draft → stories/rejected")
     p.add_argument("id")
     p.add_argument("--reason", required=True, help="ボツの理由")
     p.add_argument("--idea", required=True, help="改善案（次にどう書くか）")
@@ -100,7 +113,7 @@ def print_status(project: Project) -> None:
     if not rows:
         print("物語がありません。")
         return
-    order = ["物語CHECK待ち", "動画づくり待ち", "QA NG", "動画CHECK待ち", "投稿待ち", "投稿済み"]
+    order = ["下書き", "動画づくり待ち", "QA NG", "動画CHECK待ち", "投稿待ち", "投稿済み"]
     rows.sort(key=lambda r: (order.index(r.state) if r.state in order else len(order), r.id))
     current = None
     for r in rows:
@@ -124,6 +137,17 @@ def print_ideas(project: Project) -> None:
             print(f"- {r.date} {r.id}「{r.title}」" + (f"  {r.file}" if r.file else ""))
             print(f"    理由: {r.reason}")
             print(f"    改善案: {r.idea}")
+
+
+def run_upload(project: Project, args: argparse.Namespace) -> None:
+    if args.all == bool(args.ids):
+        raise AiShortsError("id を並べるか、--all を付けてください（どちらか一方）。")
+    ids = upload.pending_ids(project) if args.all else args.ids
+    try:
+        start = dt.date.fromisoformat(args.start) if args.start else None
+    except ValueError as e:
+        raise AiShortsError(f"--start は YYYY-MM-DD で書いてください（{args.start}）。") from e
+    upload.run(project, ids, start=start, dry_run=args.dry_run)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -152,12 +176,23 @@ def main(argv: list[str] | None = None) -> int:
             moved = library.record_post(project, args.id, args.platform, args.url, args.date)
             print(f"投稿を記録（{args.platform}）" +
                   (f" → posted/{args.id}.mp4" if moved else "（投稿済みの物語に追記）"))
+        elif args.stage == "upload":
+            run_upload(project, args)
+        elif args.stage == "youtube-login":
+            from . import youtube
+            youtube.login(project, force=True)
+            print("YouTube にログインしました。")
+        elif args.stage == "share":
+            from . import share
+            if args.install:
+                share.install(project)
+            share.sync(project)
         elif args.stage == "reject-story":
             path = library.reject_story(project, args.id, args.reason, args.idea)
             print(f"ボツ → {path.relative_to(project.root).as_posix()}")
         elif args.stage == "revive-story":
             path = library.revive_story(project, args.id, args.note)
-            print(f"下書きに戻しました → {path.relative_to(project.root).as_posix()}（もう一度物語CHECKを通す）")
+            print(f"下書きに戻しました → {path.relative_to(project.root).as_posix()}（直したら検査して承認し直す）")
         return 0
     except AiShortsError as e:
         print(f"エラー: {e}", file=sys.stderr)

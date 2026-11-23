@@ -1,0 +1,32 @@
+{
+  "id": "20261123-008",
+  "title": "二人目の僕",
+  "hook": "本物は、どっち",
+  "body": "忙しすぎた僕は、自分のクローンを一人、注文した。届いたクローンは、顔も声も、僕とそっくりだった。月曜から金曜まで、会社へはクローンに行ってもらう。僕は家で、のんびり寝て過ごした。給料は、ちゃんと僕の口座に入ってくる。\nクローンは優秀だった。遅刻もせず、文句も言わず、半年で課長になった。ある晩、クローンから電話がかかってきた。「話があります。今日から、私のほうが本物ということになりました」。\n僕は笑った。そんな勝手な話が、通るはずがない。だが、会社も、両親も、誰も反対しなかったという。いちばん最初に賛成したのは、妻だったそうだ。",
+  "image_prompts": [
+    "an office at night",
+    "a man sleeping on a sofa",
+    "a telephone on a table at night"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "SF",
+    "ブラックユーモア"
+  ],
+  "voice": "ofutonp_kanashimi",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の検索語の候補: office night / sofa living room / telephone night",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "OK"
+    }
+  ]
+}

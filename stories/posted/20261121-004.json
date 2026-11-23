@@ -1,0 +1,36 @@
+{
+  "id": "20261121-004",
+  "title": "外れない天気予報",
+  "hook": "秘密は、毎朝の電話",
+  "body": "この町の天気予報は、一度も外れたことがない。予報を読むのは、小さな放送局の、白髪のおじいさんだ。傘を持つかどうか、町の人はみんな彼の予報で決める。取材に来た私は、その秘密をたずねた。\nおじいさんは、受話器を持ち上げてみせた。「毎朝、娘に電話するんです。娘は、ずっと西の町に住んでいましてね」。「天気は、西からやってくるでしょう。娘の町の今日が、この町の明日なんです」。\nところが先週、予報は三日続けて外れた。心配した町の人たちが、放送局に集まった。おじいさんは、困ったように頭をかいた。「すみません。娘が、うちのとなりに引っ越してきまして」。",
+  "image_prompts": [
+    "a small old radio studio with a microphone",
+    "an old man holding a telephone receiver",
+    "a quiet small town under a cloudy sky"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "ほっこり"
+  ],
+  "voice": "tsukuyomi",
+  "approved": true,
+  "notes": "2026-11-21 ユーザーが承認（本文の修正なし）。Claude Code で生成。背景の仮検索語: radio microphone / old telephone / small town clouds",
+  "history": [
+    {
+      "date": "2026-11-21",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "video_approved",
+      "note": "OK"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "posted",
+      "platform": "youtube"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "id": "20261123-005",
+  "title": "地球代表",
+  "hook": "選ばれたのは僕だった",
+  "body": "夜、コンビニからの帰り道、僕は空から伸びた光に吸い上げられた。気がつくと、銀色の部屋で、細長い宇宙人たちに囲まれていた。\n「この星の生き物を調べる」。宇宙人はそう言って、僕にテストを始めた。かけ算は、半分まちがえた。走れば、三歩で転んだ。早口言葉は、一度も言えなかった。宇宙人たちは顔を見合わせ、長い相談を始めた。僕はほっとした。これなら、相手にされないだろう。\nやがて、いちばん大きな宇宙人が、満足そうにうなずいた。「合格だ。弱くて、のんきで、飼いやすい」。次の朝、家の窓から見上げた空は、銀色の船でうめつくされていた。",
+  "image_prompts": [
+    "a convenience store at night with a beam of light from the sky",
+    "a silver metallic room, science fiction",
+    "a sky full of flying saucers over a town"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読",
+    "SF",
+    "ブラックユーモア"
+  ],
+  "voice": "ofutonp_aseri",
+  "approved": true,
+  "notes": "2026-11-23 ユーザーが承認（本文の修正なし）。Claude Code で生成（ボツの 20261123-001・004 の代わり）。背景の検索語の候補: convenience store night / spaceship interior / ufo sky",
+  "history": [
+    {
+      "date": "2026-11-23",
+      "event": "story_approved",
+      "note": "本文の修正なし"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "video_approved",
+      "note": "OK"
+    },
+    {
+      "date": "2026-11-23",
+      "event": "posted",
+      "platform": "youtube"
+    }
+  ]
+}
