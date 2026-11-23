@@ -51,7 +51,7 @@
 - 長さ：話速 1.0 の COEIROINK / AivisSpeech は、冥鳴ひまり 0.92 より約1割速い（250〜280字で 46〜48秒）。字数の目安（D-006）は当面そのままにし、本数が増えたら測り直す。
 
 ## D-012 2026-11-20 CHECK を2回通し、投稿とボツを記録する
-- 流れ：物語 → 物語CHECK（人）→ 動画 → 動画CHECK（人）→ 投稿（人）。動画にも人の確認を必ず入れる（Claude が自分で OK にしない）。
+- 流れ：物語 → 物語CHECK（人）→ 動画 → 動画CHECK（人）→ 投稿（人）。動画にも人の確認を必ず入れる（Claude が自分で OK にしない）。（物語CHECK は D-018 でやめた）
 - 状態はフォルダで表す：`stories/{draft,approved,posted,rejected}/`、動画は `ready/`（CHECK待ち）→ `upload/`（投稿待ち）→ `posted/`、ボツ動画は `rejected/{id}-{n}.mp4`。
 - 経緯（承認・ボツ・投稿）は物語 JSON の `history` に残す。git で追えるようにするため、別の台帳ファイルは作らない。mp4 は従来どおり git に入れない。
 - ボツは消さず、理由と改善案を必ず書く（`python -m ai_shorts ideas` で一覧）。物語を書く前・動画を作る前に読み返し、同じ理由のボツが続いたら guidelines・検査・config を直す。
@@ -70,7 +70,7 @@
 ## D-015 2026-11-20 YouTube への投稿を API の予約投稿にする（D-003 の見直し）
 - 2026-11-02 から、審査を通っていない API プロジェクトから上げた動画も、非公開に固定されなくなった（YouTube Data API の改訂履歴と videos.insert の説明で確認）。D-003 の理由がなくなったので、ユーザーが自動化に決めた。
 - `python -m ai_shorts upload` で、動画CHECK に通った `upload/` の動画を非公開で上げ、`publishAt` で予約公開する。公開は 1 日 1 本、時刻は `youtube.publish_time`。最初の公開日は、これまでの YouTube の公開日の翌日。上げたら `posted` の記録（URL・公開日）まで行う。
-- 人の確認は減らさない。物語CHECK・動画CHECK はそのまま。`upload` を実行するのはユーザーが「投稿して」と言ったときだけで、Claude はまず `--dry-run` で公開の予定を見せて了承を得る。定期実行で勝手に投稿する仕組みは作らない。
+- 人の確認は減らさない。物語CHECK・動画CHECK はそのまま（物語CHECK は D-018 でやめ、動画CHECK だけにした）。`upload` を実行するのはユーザーが「投稿して」と言ったときだけで、Claude はまず `--dry-run` で公開の予定を見せて了承を得る。定期実行で勝手に投稿する仕組みは作らない。
 - API は YouTube Data API v3（無料。アップロードは 1 日 100 回の枠）。権限は `youtube.upload` だけ。認証情報は `secrets/`（git 管理外）。依存に google-api-python-client と google-auth-oauthlib を足した（ユーザーが了承）。
 - OAuth の同意画面は「本番」にする（「テスト」のままだとログインが 7 日で切れる）。自分だけで使うので Google の確認は申し込まない。ログインのとき「未確認のアプリ」と出る。
 - 「改変または合成されたコンテンツ」の申告（`containsSyntheticMedia`）は false。合成音声で朗読しているが、実在の人や出来事に見えるものではないため。変えるなら `youtube.contains_synthetic_media`。
@@ -88,6 +88,12 @@
 - ユーザーの判断。新しく作る動画は COEIROINK の声だけを使い、話ごとの違いはおふとんPのスタイル（のーまるv2・よろこび・かなしみ・あせり）とつくよみちゃんで出す。`voices` に `ofutonp_yorokobi`（style 21）と `ofutonp_aseri`（style 20）を足した。
 - `ofutonp_aseri` は聞き取りにくい（2026-11-23 ユーザー。「空いた席」を ofutonp で作り直した）ので、新しい物語には選ばない。
 - AivisSpeech の `aida`・`aida_calm` は設定に残す（作り直しや比べるとき用）が、新しい物語には選ばない。投稿済みの動画に使っているので、チャンネル説明文のクレジットはそのまま。
+
+## D-018 2026-11-23 物語CHECK をやめ、人の確認は動画CHECK だけにする
+- ユーザーの判断。物語の全文を読んで承認する手間をなくし、出来上がった動画を見て決める。
+- Claude は物語を書き、`check_story.py`（字数・文の長さ・読み）と story-guidelines.md の確認点を自分で見て直し、`approve_story.py` で `stories/approved/` に移して、そのまま動画まで作る。フォルダと `approved: true` の仕組みはそのまま（どの物語を処理するかの印として使う）。
+- 人の選別（policy.md の「人の手を入れる」）は動画CHECK で行う。動画を OK にするのはユーザーだけ。物語がだめなときは動画CHECK で `reject-video --drop`（理由と改善案を残す）。
+- これまでのボツの改善案（`ideas`）は、書く前に読むのを続ける。物語でのボツが続くようなら、物語CHECK を戻すか考える。
 
 ## 未決定
 - [ ] おふとんPの追加スタイル（ナレーション・どくはく・ホラーなど。1パック 1.39GB）を入れるか

@@ -49,12 +49,12 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 ## 3. 1本（または数本）作る流れ
 
 ```
-物語 → 物語CHECK（人）→ 背景 → 合成・QA → 動画CHECK（人）→ 投稿（人）→ 記録
+物語（Claude が書いて検査・承認）→ 背景 → 合成・QA → 動画CHECK（人）→ 投稿（人）→ 記録
 ```
 
 | 状態 | 物語 | 動画 | 次にやること |
 |---|---|---|---|
-| 物語CHECK待ち | `stories/draft/` | – | 全文を読んで承認かボツ |
+| 下書き | `stories/draft/` | – | 検査に通して approve_story.py で承認（物語CHECK はしない） |
 | 動画づくり待ち／QA NG | `stories/approved/` | `work/<id>/` | 背景を選んで合成 |
 | 動画CHECK待ち | `stories/approved/` | `ready/` | スマホで見て OK かボツ |
 | 投稿待ち | `stories/approved/` | `upload/` | YouTube Studio で投稿 |
@@ -72,12 +72,11 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 - 検査：`.venv\Scripts\python scripts\check_story.py stories\draft\<id>.json --readings`
   - NG を直す。読み間違いは 5 の手順で辞書に足す（辞書で直らないものは文を書き換える）。
 
-### 3-2. 承認（人）
-- 下書きの全文をユーザーに見せて、承認をもらう。**Claude が自分で承認しない**（CLAUDE.md の決まり 6）。
-- 承認されたら：`.venv\Scripts\python scripts\approve_story.py <id> --note "直した点"`（直していなければ `--note` は省略）
-  - 検査に NG があると承認されず draft に残る。
-- ボツなら：`.venv\Scripts\python -m ai_shorts reject-story <id> --reason "理由" --idea "改善案"` → `stories/rejected/`。消さずに改善案としてためる。
-  - 直して出し直すときは `revive-story <id>` で draft に戻し、もう一度承認を求める。
+### 3-2. 承認（Claude。物語CHECK はしない）
+- 人の確認は動画CHECK だけ（decisions.md D-018）。Claude が story-guidelines.md の確認点を見て直し、検査に通ったら承認する。
+- `.venv\Scripts\python scripts\approve_story.py <id> [<id> ...]`（検査に NG があると承認されず draft に残る）
+- 書いてみてやめる物語は：`.venv\Scripts\python -m ai_shorts reject-story <id> --reason "理由" --idea "改善案"` → `stories/rejected/`。
+  - 動画CHECK で物語ごとボツになったら `reject-video <id> ... --drop`（3-5）。直して出し直すときは `revive-story <id>` で draft に戻す。
 
 ### 3-3. 背景画像（ComfyUI ができるまでの仮。D-008）
 1. 候補を並べる：`.venv\Scripts\python scripts\preview_backgrounds.py --name <id> "検索語1" "検索語2" "検索語3"`

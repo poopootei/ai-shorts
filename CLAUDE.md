@@ -15,7 +15,7 @@
 3. **動画は59秒以下。** Content ID の申し立てが付いた1分超のショートはブロックされる。QA でここを必ず検査する。
 4. **BGM の作曲を Claude がしない。** メロディ・和音・構成はユーザーが決めたもの（MIDI）を使う。Claude が作ってよいのはシンセエンジン（音色、エンベロープ、エフェクト）とレンダリングのコードだけ。生成AI楽曲は TuneCore Japan の Content ID に登録できないため（docs/bgm.md）。
 5. **第三者の音源素材を BGM に入れない。** ループ、サンプルパック、SoundFont、効果音素材は使わない。音は numpy で合成して WAV に直接書き出す。
-6. **物語は人の承認を通す。** `approved: true` で `stories/approved/` にあるものだけを処理する。生成した物語を自動で承認しない。
+6. **人の確認は動画CHECK で通す。** 物語CHECK はしない（docs/decisions.md D-018）。Claude は物語を書いて `scripts/check_story.py` に通し、`scripts/approve_story.py` で `stories/approved/` に移して動画まで作る。処理するのは `approved: true` で `stories/approved/` にあるものだけ。動画を OK にするのはユーザーだけで、Claude が自分で OK にしない。
 7. **画像生成モデルは商用利用できるものだけ。** 新しいモデルを使う前に、ライセンスを docs/decisions.md に記録する。
 
 ## コードの方針
@@ -58,4 +58,4 @@ Claude Code では、依頼に合うスキル（`.claude/skills/`）を使って
 - **upload/**: 動画CHECK に合格し、投稿を待つもの（ユーザーが頼んだら `upload` で予約投稿）
 - **posted/**: 投稿済みの原本。物語は `stories/posted/`
 - **ボツ**: 物語は `stories/rejected/`、動画は `rejected/{id}-{n}.mp4`。理由と改善案を物語 JSON の `history` に必ず残す
-- **流れ**: 物語 → 物語CHECK（人）→ 動画 → 動画CHECK（人）→ 投稿（人が頼んで `upload`）。状態は `python -m ai_shorts status`、改善案は `python -m ai_shorts ideas`（docs/runbook.md 3）
+- **流れ**: 物語（Claude が書いて検査）→ 動画 → 動画CHECK（人）→ 投稿（人が頼んで `upload`）。状態は `python -m ai_shorts status`、改善案は `python -m ai_shorts ideas`（docs/runbook.md 3）
