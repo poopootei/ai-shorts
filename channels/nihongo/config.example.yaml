@@ -1,7 +1,7 @@
 # 「物語で学ぶ日本語」チャンネル（海外の日本語学習者向け）の設定。共通の assets は ../../assets を使う。
 # 使い方: $env:AI_SHORTS_ROOT = "<repo>/channels/nihongo" にしてから python -m ai_shorts ...
-# 日本語の音声（ゆっくり）＋ 日本語の字幕（ルビ付き）＋ 英訳。docs/decisions.md D-018
-format: lesson   # 1本で1文を、普通の速さ → かたまりごとの分解 → ゆっくり → まねる間 → 次の予告（D-020）
+# 日本語の音声（ゆっくり）＋ 日本語の字幕（ルビ付き）＋ 英訳。docs/decisions.md D-022
+format: lesson   # 1本で1文を、普通の速さ → かたまりごとの分解 → ゆっくり → まねる間 → 次の予告（D-024）
 
 
 tts:
@@ -39,15 +39,15 @@ comfyui:
   height: 1920
 
 subs:
-  fit: true               # 大きさは文ごとに選ぶ：下の *_font_size を上限に、不自然な折り返しをしない範囲でいちばん大きく（D-021）
+  fit: true               # 大きさは文ごとに選ぶ：下の *_font_size を上限に、不自然な折り返しをしない範囲でいちばん大きく（D-025）
   fit_floor_ratio: 0.7     # 下限 = 上限 × この値
-  mode: learner            # 学習者向け：日本語（ルビ付き）と英訳を文ごとに同時に出す（D-018）
+  mode: learner            # 学習者向け：日本語（ルビ付き）と英訳を文ごとに同時に出す（D-022）
   ruby_font_size: 62   # ルビは日本語の大きさに比例（62 / 140）
   en_font_size: 80   # 意味・英訳（黄）の上限（3行まで、かたまりの意味は2行まで）
   en_max_chars_per_line: 25
   label_font_size: 100   # 見出し（藍の帯）。2026-11-23 56 → 72 → 100（変化が分からないとの指摘）
   label_position_y_ratio: 0.22
-  font_file: ../../assets/fonts/KleeOne-SemiBold.ttf   # 教科書体（和風で、書くときの字の形が分かる）。OFL 1.1、D-021
+  font_file: ../../assets/fonts/KleeOne-SemiBold.ttf   # 教科書体（和風で、書くときの字の形が分かる）。OFL 1.1、D-025
   font_name: Klee One SemiBold   # libass はファミリー名（name ID 1）で探す
   font_size: 140   # 今日の1文の上限（日本語は2行まで）
   outline: 6

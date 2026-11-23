@@ -345,7 +345,7 @@ def build_learner_events(
 
 @dataclass(frozen=True)
 class LessonLook:
-    """レッスン形式の見た目（config の subs.* と lesson.*）。D-020"""
+    """レッスン形式の見た目（config の subs.* と lesson.*）。D-024"""
     label_size: int
     note_size: int
     note_max_chars: int
@@ -377,7 +377,7 @@ def build_lesson_events(
     lo: Layout, look: LessonLook, sub_y: int, label_y: int, hook_y: int, hook_max_chars: int,
     outro_label: str = "Next line",
 ) -> list[Event]:
-    """レッスン形式：問いかけ → 今日の1文 → かたまりごとの分解 → まねする → 最後の一文（D-020）。
+    """レッスン形式：問いかけ → 今日の1文 → かたまりごとの分解 → まねする → 最後の一文（D-024）。
 
     最後の一文（next_text）は、作品の出典と背景（outro_label = About this story）か、次の1文の予告。
 
@@ -494,7 +494,7 @@ def to_ass(events: list[Event], *, width: int, height: int, font_name: str,
                 f"0,0,0,0,100,100,0,0,{border_style},{border:g},0,5,0,0,0,1")
 
     def lesson_styles() -> list[str]:
-        # レッスン形式（D-020）：文字の下に板を敷くので、縁取りは細く。役割ごとに色を分ける（&HAABBGGRR）
+        # レッスン形式（D-024）：文字の下に板を敷くので、縁取りは細く。役割ごとに色を分ける（&HAABBGGRR）
         #   日本語 = 白 / ルビ = 白に近い黄 / 意味・英訳 = 黄 / 文法のメモ = 薄い緑 / 見出し = 藍の帯に白
         panel_alpha = round((1 - max(0.0, min(1.0, panel_opacity))) * 255)
         return [

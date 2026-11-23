@@ -216,7 +216,7 @@ def run(project: Project, story_id: str, client: TtsClient | None = None) -> Non
     log(f"→ {out / 'voice.wav'}（{len(audio) / settings.sample_rate:.2f} 秒, 話速 {speed:.2f}）")
 
 
-# ---- レッスン形式（format: lesson、D-020） -----------------------------------
+# ---- レッスン形式（format: lesson、D-024） -----------------------------------
 
 @dataclass(frozen=True)
 class LessonStep:

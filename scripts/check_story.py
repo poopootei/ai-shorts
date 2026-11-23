@@ -67,7 +67,7 @@ def check(path: Path, project, readings: bool) -> int:
     longest = max((ruby.strip(s) for s in sentences), key=len) if sentences else ""
     chunks = [c.get("ja", "") for c in d.get("breakdown", [])]
     if lesson:
-        # レッスン形式（D-020）：1本で1文。かたまりに分けて、つなげると元の文になる
+        # レッスン形式（D-024）：1本で1文。かたまりに分けて、つなげると元の文になる
         if len(sentences) != 1:
             ng.append(f"本文が {len(sentences)} 文（レッスン形式は1文）")
         if not 2 <= len(chunks) <= 5:
@@ -92,7 +92,7 @@ def check(path: Path, project, readings: bool) -> int:
     if len(d.get("hook", "")) > hook_max:
         ng.append(f"hook {len(d['hook'])} 字（{hook_max} 字以内）")
     if learner:
-        # 学習者向け：すべての漢字にルビ、文ごとに英訳（docs/decisions.md D-018）
+        # 学習者向け：すべての漢字にルビ、文ごとに英訳（docs/decisions.md D-022）
         bare = sorted({c for s in sentences + chunks for c in ruby.uncovered_kanji(s)})
         if bare:
             ng.append(f"ルビのない漢字がある: {''.join(bare)}")
