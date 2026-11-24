@@ -86,9 +86,8 @@ wife = kit.Character("wife", "casual_woman.glb", "mixamo", 1.58)
 husband = kit.Character("husband", "casual_man.glb", "quaternius", 1.70)
 wife.tint_texture(0.09, 0.2, 0.35, (0.05, 0.025, 0.015))     # 金髪 → こげ茶の髪
 husband.recolor("Skin", (0.62, 0.45, 0.32))
-# 腕と胴は Mixamo の動き（assets/3d/motions/mixamo/）に任せ、箱にふれるときだけ IK で手を置く
-kit.seat(wife, (-SEAT_X + 0.02, 0, 0), 0.0, arms="clip")
-kit.seat(husband, (SEAT_X - 0.02, 0, 0), math.pi, arms="clip")
+kit.seat(wife, (-SEAT_X + 0.02, 0, 0), 0.0)
+kit.seat(husband, (SEAT_X - 0.02, 0, 0), math.pi)
 # カメラ側（世界の -Y）の手で箱にふれる。妻は +X 向きなので右手、夫は -X 向きなので左手
 WIFE_HAND, HUS_HAND = "R", "L"
 
@@ -175,24 +174,14 @@ def still(c, t):
 
 for c in (wife, husband):
     still(c, 0)
-    c.play("sitting_idle", 1, F(DURATION))          # ふだん：座って息をしている
 
-
-def act(c, name, t0, t1, **kw):
-    """t0〜t1 秒に Mixamo の動きを重ねる（出入りは 0.3 秒でなめらかに）。"""
-    c.play(name, F(t0), F(t1), blend=9, **kw)
-
-
-# Mixamo の動き（物語の文の時刻に合わせる）
-act(wife, "sitting_laughing", S[3]["start"] - 0.2, S[3]["end"] + 0.3)          # 妻はずいぶん楽しそうだ
-act(wife, "sitting_talking", S[4]["start"] - 0.2, S[4]["end"] + 0.4)           # 「あなた、浮気してない？」
-act(husband, "sitting_rubbing_arm", S[4]["start"], S[5]["start"] + 0.4)        # 聞かれて落ち着かない
-act(wife, "sitting_impatient", S[9]["start"], S[10]["end"])                    # つまらなそうに
-act(husband, "sitting_talking", S[11]["start"] - 0.2, S[11]["end"] + 0.3)      # 「君は、僕のことを愛してる？」
-act(wife, "sitting_laughing", S[12]["start"], S[12]["end"] + 0.3)              # にっこり笑って
-act(husband, "disbelief_back", BUZZ1[0], BUZZ1[1] + 0.5, loop=False, amount=0.55)   # ブザー：のけぞる
-act(wife, "disbelief_forward", S[14]["start"], DURATION, loop=False, amount=0.45)  # 箱を見つめる
-act(husband, "scared", BUZZ2[0] - 0.2, DURATION, loop=False, move=0.35)        # 2度目のブザー：飛び上がる
+# 妻は楽しそう（頭を小さく揺らす）
+t = S[3]["start"]
+while t < S[3]["end"]:
+    wife.turn("neck", F(t), roll=0.12)
+    wife.turn("neck", F(t + 0.35), roll=-0.12)
+    t += 0.7
+wife.turn("neck", F(S[3]["end"] + 0.2))
 
 # 妻が聞く：「あなた、浮気してない？」で身を乗り出す
 wife.turn("spine", F(S[4]["start"] - 0.3))
@@ -225,17 +214,20 @@ wife.touch(WIFE_HAND, F(S[11]["end"] - 0.6), on=False)
 wife.turn("spine", F(S[11]["end"] - 0.6))
 wife.touch(WIFE_HAND, F(S[11]["end"] + 0.3), w, f, on=True)
 wife.turn("spine", F(S[11]["end"] + 0.3), pitch=0.3)
-# ブザーで夫が身を引く（前かがみをやめる。のけぞりは Mixamo の動き）
+wife.turn("neck", F(S[12]["start"] + 0.5))
+wife.turn("neck", F(S[12]["start"] + 0.9), pitch=0.2)      # うなずくように笑う
+wife.turn("neck", F(S[12]["start"] + 1.3))
+# ブザー：夫はのけぞる
 husband.turn("spine", F(BUZZ1[0]), pitch=0.22)
-husband.turn("spine", F(BUZZ1[0] + 0.4))
-# 妻は箱を見つめて、首をかしげる（見つめるのは Mixamo の動き、かしげるのはここで重ねる）
-wife.turn("neck", F(S[14]["start"] + 1.6))
-wife.turn("neck", F(S[14]["start"] + 2.2), roll=0.35)
-wife.turn("neck", F(DURATION), roll=0.35)
+husband.turn("spine", F(BUZZ1[0] + 0.25), pitch=-0.3)
+# 妻は箱を見つめて、首をかしげる
+wife.turn("neck", F(S[14]["start"]))
+wife.turn("neck", F(S[14]["start"] + 0.5), pitch=0.35)
+wife.turn("neck", F(S[14]["start"] + 1.6), pitch=0.35)
+wife.turn("neck", F(S[14]["start"] + 2.2), pitch=0.3, roll=0.4)
+wife.turn("neck", F(DURATION), pitch=0.3, roll=0.4)
 wife.touch(WIFE_HAND, F(DURATION), w, f, on=True)
-
-for c in (wife, husband):
-    c.bake(F(DURATION))
+husband.turn("spine", F(DURATION), pitch=-0.3)
 
 # ---- カメラ ------------------------------------------------------------------
 
