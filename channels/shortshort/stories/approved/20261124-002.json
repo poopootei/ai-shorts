@@ -25,6 +25,11 @@
       "date": "2026-11-24",
       "event": "video_approved",
       "note": "3本ともOK"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "video_approved",
+      "note": "3D 版（Blender）に差し替え。ユーザー：「このくらいのクオリティならOK」。静止画の版は work/20261124-002/video_static.mp4"
     }
   ]
 }

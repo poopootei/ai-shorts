@@ -286,6 +286,7 @@ def run(project: Project, story_id: str) -> None:
         subs=subs_filter(project, work), credit=credit_filter(project, work),
     )
     out = work / "video.mp4"
+    (work / "visual.json").unlink(missing_ok=True)   # 静止画の版に戻すので、3D のクレジットは外す
     audio_index = len(durations)
     ffmpeg.run(
         [

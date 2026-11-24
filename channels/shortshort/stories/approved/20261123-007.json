@@ -26,6 +26,11 @@
       "date": "2026-11-23",
       "event": "video_approved",
       "note": "OK"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "video_approved",
+      "note": "3D 版（Blender）に差し替え。ひじの向きを直した版。ユーザー：「2本とも OK」。静止画の版は work/20261123-007/video_static.mp4"
     }
   ]
 }

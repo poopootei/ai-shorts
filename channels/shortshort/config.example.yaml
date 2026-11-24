@@ -72,6 +72,12 @@ render:
   credit_margin: 40         # 左端からの px
   credit_y_ratio: 0.06      # 上端からの割合
 
+# 3D の背景（試作。scripts/render_3d.py）。舞台は scripts/blender/{id}.py に物語ごとに書く
+blender:
+  exe: D:\blender\blender.exe   # Blender 5.2 LTS（ポータブル版）
+  samples: 16                   # EEVEE のサンプル数。多いほどきれいで遅い
+  credit: 3D（Blender）、人形：Quaternius（CC0）   # 3D 版を採用したとき、説明文の「映像：」に書く
+
 qa:
   lufs_tolerance: 1.0
   subs_side_margin: 40      # 字幕の左右に空ける px

@@ -56,6 +56,14 @@ def test_description_uses_voice_credit():
     assert "出典" not in text
 
 
+def test_description_uses_visual_credit_instead_of_images():
+    s = Story(id="x", title="題", hook="引き", body="本文")
+    images = {"images": [{"source": "openverse", "license": "cc0"}]}
+    text = describe(s, "COEIROINK:おふとんP", images, visual={"kind": "3d", "credit": "3D（Blender）"})
+    assert "映像：3D（Blender）" in text and "背景画像" not in text
+    assert "背景画像：CC0（openverse）" in describe(s, "COEIROINK:おふとんP", images)
+
+
 def test_description_shows_source():
     s = Story(id="x", title="題", hook="引き", body="本文", source="芥川龍之介『蜘蛛の糸』（青空文庫）")
     text = describe(s, "COEIROINK:おふとんP", None)

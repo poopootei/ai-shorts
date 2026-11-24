@@ -31,12 +31,14 @@ def log(msg: str) -> None:
 
 
 _LABELS = {
-    "ja": {"source": "出典：", "voice": "声：", "images": "背景画像："},
-    "en": {"source": "Source: ", "voice": "Voice: ", "images": "Background images: "},
+    "ja": {"source": "出典：", "voice": "声：", "images": "背景画像：", "visual": "映像："},
+    "en": {"source": "Source: ", "voice": "Voice: ", "images": "Background images: ", "visual": "Visuals: "},
 }
 
 
-def describe(story: Story, credit: str, images: dict | None, lang: str = "ja") -> str:
+def describe(story: Story, credit: str, images: dict | None, lang: str = "ja",
+             visual: dict | None = None) -> str:
+    """投稿の説明文。visual（work/{id}/visual.json。3D の映像など）があれば、背景画像の行の代わりに書く。"""
     label = _LABELS.get(lang, _LABELS["ja"])
     lines = [story.title, "", story.hook, ""]
     if story.tags:
@@ -44,7 +46,9 @@ def describe(story: Story, credit: str, images: dict | None, lang: str = "ja") -
     if story.source:
         lines.append(f"{label['source']}{story.source}")
     lines.append(f"{label['voice']}{credit}")
-    if images and images.get("images"):
+    if visual and visual.get("credit"):
+        lines.append(f"{label['visual']}{visual['credit']}")
+    elif images and images.get("images"):
         sources = sorted({i.get("source") or "?" for i in images["images"]})
         licenses = sorted({(i.get("license") or "?").upper() for i in images["images"]})
         lines.append(f"{label['images']}{' / '.join(licenses)}（{', '.join(sources)}）")
@@ -143,10 +147,12 @@ def run(project: Project, story_id: str) -> None:
     credit = timing.get("credit", "")
     images_path = work / "images.json"
     images = json.loads(images_path.read_text(encoding="utf-8")) if images_path.exists() else None
+    visual_path = work / "visual.json"    # 3D の映像を採用したとき（scripts/render_3d.py --adopt）
+    visual = json.loads(visual_path.read_text(encoding="utf-8")) if visual_path.exists() else None
     description = work / "description.txt"
     if story and credit:
         description.write_text(
-            describe(story, credit, images, lang=project.get("qa.description_lang", "ja")),
+            describe(story, credit, images, lang=project.get("qa.description_lang", "ja"), visual=visual),
             encoding="utf-8",
         )
     credit_ok = bool(credit) and description.exists() and credit in description.read_text(encoding="utf-8")
