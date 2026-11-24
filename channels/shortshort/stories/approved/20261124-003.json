@@ -1,0 +1,35 @@
+{
+  "id": "20261124-003",
+  "title": "予約席",
+  "hook": "誰も座らない予約席",
+  "body": "公園の古いベンチに、毎朝「予約席」と書いたふだが置かれている。けれど、そこに座る人を見たことは一度もない。\n気になった私は、ある朝早く来て、木のかげから見張った。現れたのは、杖をついたおばあさんだった。ふだをベンチに置くと、そのまま帰っていく。追いかけてわけを聞くと、おばあさんは照れくさそうに笑った。「昔、ここで会う約束をした人がいるの。席だけでも、取っておいてあげたくて」。\n次の日、私は昼過ぎまでベンチを見ていた。やって来たのは、杖をついたおじいさんだった。おじいさんはふだを見ると、寂しそうに首をふった。「今日も、先客か」。",
+  "image_prompts": [
+    "old wooden park bench in the early morning",
+    "elderly woman with a cane walking in a park",
+    "empty park bench in the afternoon sun"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読"
+  ],
+  "voice": "tsukuyomi",
+  "approved": true,
+  "notes": "2026-11-24 承認（読みの確認はエンジン停止中のため未実施）。ほっこり・少し切ない。背景の検索語: park bench / elderly cane park / bench afternoon",
+  "history": [
+    {
+      "date": "2026-11-24",
+      "event": "story_approved",
+      "note": "読みの確認はエンジン停止中のため未実施"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "story_edited",
+      "note": "札を「さつ」と読むので「ふだ」に書き換え"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "video_approved",
+      "note": "3本ともOK"
+    }
+  ]
+}

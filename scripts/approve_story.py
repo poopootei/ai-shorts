@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -47,7 +48,9 @@ def main() -> None:
             {"date": dt.date.today().isoformat(), "event": "story_approved", "note": args.note})
         dst.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         # 検査に通らなければ元に戻す
-        rc = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "check_story.py"), str(dst)]).returncode
+        # チャンネルのフォルダを環境変数で渡す（check_story.py は --channel か AI_SHORTS_ROOT で決める）
+        rc = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "check_story.py"), str(dst)],
+                            env={**os.environ, "AI_SHORTS_ROOT": str(ROOT)}).returncode
         if rc != 0:
             dst.unlink()
             sys.exit(f"{sid} は検査で NG があったので承認していません（draft のまま）。")

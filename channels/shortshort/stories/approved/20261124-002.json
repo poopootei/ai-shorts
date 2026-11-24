@@ -1,0 +1,30 @@
+{
+  "id": "20261124-002",
+  "title": "嘘発見器",
+  "hook": "妻が嘘発見器を買った",
+  "body": "妻が、嘘発見器を買ってきた。小さな箱に、赤と青のランプがついている。嘘をつくと、赤が光ってブザーが鳴るらしい。妻はなぜか、ずいぶん楽しそうだ。\n「あなた、浮気してない？」。私は箱に手をのせて、してないと答えた。青が光った。「へそくりは？」。ないと答えると、また青だった。妻は、つまらなそうに口をとがらせた。\n今度は、私が聞く番だ。「君は、僕のことを愛してる？」。妻はにっこり笑って、もちろんと答えた。ブザーが、部屋じゅうに鳴りひびいた。妻は箱を見つめて、首をかしげた。「あら、壊れてるみたいね」。その言葉にも、ブザーは鳴った。",
+  "image_prompts": [
+    "small wooden box with red and blue lamps on a living room table",
+    "couple sitting at a kitchen table at night",
+    "red warning light glowing in a dim room"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読"
+  ],
+  "voice": "ofutonp_kanashimi",
+  "approved": true,
+  "notes": "2026-11-24 承認（読みの確認はエンジン停止中のため未実施）。ブラックユーモア。背景の検索語: living room table / red lamp / couple kitchen",
+  "history": [
+    {
+      "date": "2026-11-24",
+      "event": "story_approved",
+      "note": "読みの確認はエンジン停止中のため未実施"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "video_approved",
+      "note": "3本ともOK"
+    }
+  ]
+}

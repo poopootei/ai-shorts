@@ -34,6 +34,8 @@ PARTICLES = "のがはをにでともへや"
 CONTINUATIVE = "いきしちひびみりぎじえけせねべめれげ"
 # 長いひらがなの続きを字数で切るときは、この字の後を選ぶ（前の組ほど優先。「やって｜くるでしょう」「おいしく｜ありません」）。
 SPLIT_AFTER_TIERS = ("てを", "にがはとも", "で", "く")
+# 助詞も漢字→ひらがなの切れ目もないときに、字数で切る前に選ぶ字（「みなさん｜そうなります」）。
+SPLIT_AFTER_LAST = "ん"
 DETERMINERS = ("この", "その", "あの", "どの")
 # 行の区切り方のコスト。行の余り字数 s に対して s + s²/max_chars（行が少なく、長さがそろうほど安い）に、次の罰を足す。
 # 句読点以外で切ると、1行増やすより高くつくようにしてある（「背を｜測り」より「、」で切る）。
@@ -85,6 +87,9 @@ def _split_long(a: str, max_chars: int) -> list[str]:
                 break
         if not k:
             good = [k for k in cands if _is_kanji(a[k - 1]) and _is_hiragana(a[k])]
+            k = max(good) if good else 0
+        if not k:
+            good = [k for k in cands if k >= 2 and a[k - 1] in SPLIT_AFTER_LAST and _is_hiragana(a[k])]
             k = max(good) if good else 0
         if not k:
             k = max(cands) if cands else max_chars

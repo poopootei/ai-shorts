@@ -64,6 +64,11 @@ def test_atoms_particle_split_does_not_leave_tiny_tail():
     assert atoms("半年先までうまっている", 10) == ["半年先まで", "うまっている"]
 
 
+def test_atoms_split_long_hiragana_after_n_before_hard_split():
+    # 助詞がないときは「ん」の後で切る（みなさんそうな｜ります」にしない）
+    assert atoms("みなさんそうなります」", 10) == ["みなさん", "そうなります」"]
+
+
 def test_atoms_hard_split_does_not_leave_tiny_tail():
     assert atoms("アイウエオカキクケコサ」", 10) == ["アイウエオカキク", "ケコサ」"]
 

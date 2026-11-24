@@ -1,0 +1,30 @@
+{
+  "id": "20261124-001",
+  "title": "三割引",
+  "hook": "私にも値札が貼られた",
+  "body": "閉店まぎわのスーパーで、店員が値下げのシールを貼って回っていた。刺身に半額、パンに二割引。私は弁当を手に取り、ふと自分の肩を見た。そこにも、黄色いシールが貼られていた。「三割引」。\nあわててはがそうとしたが、爪を立てても取れない。店員に見せると、彼は気の毒そうに言った。「閉店まぎわは、みなさんそうなります」。見回すと、疲れた顔の客たちの背中にも、シールが光っていた。私は誰かに買われる気がして、店を飛び出した。\n翌朝、会社に行くと、部長が私の肩を見て、満足そうにうなずいた。その月から、私の給料は三割減っていた。",
+  "image_prompts": [
+    "supermarket at night, discount stickers on food packages",
+    "tired shoppers in a fluorescent-lit supermarket aisle",
+    "office desk in the morning, man in suit"
+  ],
+  "tags": [
+    "ショートショート",
+    "朗読"
+  ],
+  "voice": "ofutonp",
+  "approved": true,
+  "notes": "2026-11-24 承認（読みの確認はエンジン停止中のため未実施）。ブラックユーモア。背景の検索語: supermarket night / discount sticker / office morning",
+  "history": [
+    {
+      "date": "2026-11-24",
+      "event": "story_approved",
+      "note": "読みの確認はエンジン停止中のため未実施"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "video_approved",
+      "note": "3本ともOK"
+    }
+  ]
+}
