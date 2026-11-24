@@ -34,3 +34,6 @@ tools/
 .pytest_cache/
 *.egg-info/
 .claude/settings.local.json
+
+# Mixamo の動き（Adobe の規約で再配布できない。各自 mixamo.com から落とす。docs/decisions.md D-027）
+assets/3d/motions/mixamo/*.fbx

@@ -181,6 +181,16 @@
   - 夫は -X を向いていて、補助の光（+X 側）が背中に当たっていたので、夫の正面側からも柔らかい光を足した。
   - 青のランプ：明るすぎる青は色調補正（AgX）で白っぽくなる。青の発光は赤の 1/10 ほど（1.0）にする。光らせるものは、強さを下げて色を確かめる。
   - 手が箱の上のランプを隠していたので、ランプを箱の手前（カメラ側）の縁に並べ、手は奥の半分にのせた。小物は、手やカメラの位置と合わせて置き場所を決める。
+- 2026-11-25 追記：人形の動きに Mixamo を使う（ユーザーが選んだ）。
+  - 参考：[0秒博士](https://www.youtube.com/@0ssshakase)（断面の 3D で「〇〇の作り方」。2026-11-11 開始で2週間に32本・登録4.4万人）も、3D ソフトに既製の素材と既製の動きを組み合わせた作りと見た。IK と角度だけの動きは硬いので、動きは既製のものを使う。
+  - Mixamo（Adobe）：Adobe ID があれば無料。キャラクターと動きは、個人・商用・非営利の作品にロイヤリティなしで使える（[Mixamo FAQ](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html)、最終更新 2021-09-14 を 2026-11-25 に確認）。動きのファイルそのものは再配布しないので、`assets/3d/motions/mixamo/*.fbx` は git に入れない（.gitignore）。ログインとダウンロードの許可はユーザーが行う。
+  - 落とし方：キャラクターを Y Bot（Mixamo の標準の骨）にして、FBX Binary・Without Skin・30fps・Keyframe Reduction なし。ファイル名は `sitting_idle.fbx` のように小文字と _ に直す。今あるのは sitting_idle / sitting_talking / sitting_laughing / sitting_impatient / sitting_rubbing_arm / disbelief_forward / disbelief_back / scared の8本（座ったままの動き）。
+  - 移し方（`kit.load_clip` / `Character.play` / `Character.bake`）：人形を Mixamo に上げず、Blender の中で移す。「人形の向き基準」の空間で、Mixamo の骨が休みの姿勢から回った分だけ、人形の骨も回す（休みの姿勢の骨の向きは先に Mixamo にそろえる）。妻は骨の名前が Mixamo と同じ、夫（Quaternius）は対応表（Body = Hips、Abdomen / Torso / Chest = 背骨）で移す。どちらも T ポーズなので、そのまま合った。
+  - 重ね方：ふだんの姿勢（sitting_idle）を全体に流し、文の時刻に合わせて別の動きを重ねる（出入りは 0.3 秒でなめらかに）。大げさな動きは `amount` で弱め、立ち上がる動きは `move` で腰の移動を小さくして机にぶつからないようにする。turn（前かがみ・首をかしげる）は動きの上に重ねる。脚は IK のまま（足は床から動かない）、腕は動きに任せ、箱にふれるあいだだけ IK と手の向きを効かせる（`seat(arms="clip")`）。
+  - 1コマずつキーを打つ（2体・1,510 コマで1秒ほど）。
+  - 結果：「嘘発見器」に8本を重ねた版を見たユーザーは「全体的に大げさなので元のほうが良い」。舞台（`scripts/blender/20261124-002.py`）は IK と turn だけの動きに戻した。Mixamo の版はコミット「人形の動きに Mixamo も使えるようにする」に残っている。
+  - 今後も使うかもしれないので、kit の `play` / `bake` と、落とした8本は残す。使うなら、笑う・驚くのような大きな動きは避け、ふだんの姿勢（sitting_idle）を `amount` で弱めに重ねるところから試す。
+  - 3D の4本（下の追記）を作ったブランチを main に合わせるとき、kit に `play` / `bake` / `load_clip` と `seat(arms="clip")` を移した（2026-11-25。Mixamo の版の嘘発見器で下見して動くことを確かめた）。
 - 2026-11-25 追記（3本目を見たユーザー：「このくらいのクオリティならOK」。投稿待ちの半分を 3D にする。手戻りは少なく）：
   - 嘘発見器を 3D 版に差し替えた。採用の流れ：`scripts/render_3d.py -c <ch> <id> --adopt`（video_3d.mp4 → video.mp4。前の版は video_static.mp4 に残す）→ `qa` → 動画CHECK → `approve-video`。採用すると `work/{id}/visual.json` ができ、説明文の「背景画像：」の行が「映像：3D（Blender）、人形：Quaternius（CC0）」（config の `blender.credit`）になる。`render` で静止画の版を作り直すと visual.json は消える。
   - 残りの3本は、場面がひとつで人が少ない話を選んだ（ユーザー）：二人目の僕・思い出の質屋・予約席。

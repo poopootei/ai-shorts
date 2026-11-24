@@ -5,7 +5,8 @@
 - シーンの準備（EEVEE・解像度・色）と引数（--timing / --out / --stills …）
 - 材質（単色・木目）と基本図形（箱・球・円柱・空）
 - 光、キーフレームの補間
-- 人形（assets/3d/characters/*.glb）：読み込み・大きさ合わせ・座らせる・手足の行き先（IK）・首と胴の向き
+- 人形（assets/3d/characters/*.glb）：読み込み・大きさ合わせ・座る／立つ／歩く・手足の行き先（IK）と手の向き・物を持つ・首と胴の向き
+- Mixamo の動き（assets/3d/motions/mixamo/*.fbx。各自で落とす）を人形に移す：play / bake（D-027）
 - 書き出し（下見のコマ / 全編）
 """
 
@@ -22,6 +23,7 @@ from mathutils import Matrix, Quaternion, Vector
 
 REPO = Path(__file__).resolve().parents[2]
 CHARACTERS = REPO / "assets" / "3d" / "characters"
+MOTIONS = REPO / "assets" / "3d" / "motions" / "mixamo"   # Mixamo の動き（各自で落とす。git に入れない）
 
 
 # ---- 引数とシーン ---------------------------------------------------------------
@@ -301,6 +303,8 @@ RIGS = {
         # IK の pole_angle（ひじ・ひざが正しい向きに曲がる値。2026-11-24 に下見で確かめた）
         # 腕は手のひらを下にしたとき手首がねじれない値（左腕を前に伸ばして確かめた）
         "poles": {"leg": {"L": math.pi, "R": 0.0}, "arm": {"L": math.pi, "R": 0.0}},
+        # Mixamo の骨 → この人形の骨（動きを移すとき）。Quaternius の Body が Mixamo の Hips にあたる
+        "mixamo_map": "quaternius",
     },
     "mixamo": {
         "hips": "Hips", "spine": "Spine2", "neck": "Neck", "head": "Head",
@@ -310,8 +314,82 @@ RIGS = {
         "foot_detached": False, "side": {"L": "Left", "R": "Right"},
         # 腕は -π/2 でひじが後ろ下へ曲がる（+π/2 だと前に出て逆に曲がって見えた。2026-11-25 に数値で確かめた）
         "poles": {"leg": {"L": 1.5708, "R": 1.5708}, "arm": {"L": -1.5708, "R": -1.5708}},
+        "mixamo_map": "same",
     },
 }
+
+
+def _mixamo_map(kind: str, target_bones) -> dict:
+    """Mixamo の骨の名前（mixamorig: を除いたもの）→ 人形の骨の名前。"""
+    if kind == "same":
+        return {n: n for n in target_bones}
+    m = {"Hips": "Body", "Spine": "Abdomen", "Spine1": "Torso", "Spine2": "Chest", "Neck": "Neck", "Head": "Head"}
+    for S, s in (("Left", "L"), ("Right", "R")):
+        m.update({f"{S}Shoulder": f"Shoulder.{s}", f"{S}Arm": f"UpperArm.{s}", f"{S}ForeArm": f"LowerArm.{s}",
+                  f"{S}Hand": f"Wrist.{s}", f"{S}UpLeg": f"UpperLeg.{s}", f"{S}Leg": f"LowerLeg.{s}"})
+        for finger in ("Thumb", "Index", "Middle", "Ring", "Pinky"):
+            for i in (1, 2, 3):
+                m[f"{S}Hand{finger}{i}"] = f"{finger}{i}.{s}"
+    return {k: v for k, v in m.items() if v in target_bones}
+
+
+# ---- Mixamo の動き ---------------------------------------------------------------
+
+_CLIPS: dict = {}
+
+
+def load_clip(name: str) -> dict:
+    """assets/3d/motions/mixamo/{name}.fbx（人形なし・30fps）を読み、コマごとの骨の向きを取り出す。
+    向きは「人形の向き基準」の空間（前が -Y、上が +Z。Mixamo の Y Bot はもとからこの向き）で持つ。
+    読み込んだ骨組みは、取り出したら消す。"""
+    if name in _CLIPS:
+        return _CLIPS[name]
+    path = MOTIONS / f"{name}.fbx"
+    if not path.exists():
+        raise FileNotFoundError(f"Mixamo の動きがありません: {path}（mixamo.com から FBX・人形なしで落として置く）")
+    before = {o.name for o in bpy.data.objects}
+    bpy.ops.import_scene.fbx(filepath=str(path))
+    objs = _new_objects(before)
+    src = next(o for o in objs if o.type == "ARMATURE")
+    act = src.animation_data.action
+    fcs = {(fc.data_path, fc.array_index): fc for fc in fcurves_of(src)}
+    bones = sorted(src.data.bones, key=lambda b: len(b.parent_recursive))
+    W = src.matrix_world.copy()
+    f0, f1 = (int(round(v)) for v in act.frame_range)
+
+    def chan(b, prop, n, default):
+        p = f'pose.bones["{b.name}"].{prop}'
+        return [fcs[(p, i)].evaluate(f) if (p, i) in fcs else default[i] for i in range(n)]
+
+    frames = []
+    for f in range(f0, f1 + 1):
+        M, out = {}, {}
+        for b in bones:
+            loc = Vector(chan(b, "location", 3, (0, 0, 0)))
+            if src.pose.bones[b.name].rotation_mode == "QUATERNION":
+                rot = Quaternion(chan(b, "rotation_quaternion", 4, (1, 0, 0, 0))).normalized().to_matrix()
+            else:
+                from mathutils import Euler
+                rot = Euler(chan(b, "rotation_euler", 3, (0, 0, 0))).to_matrix()
+            basis = Matrix.Translation(loc) @ rot.to_4x4()
+            rel = (b.parent.matrix_local.inverted() @ b.matrix_local) if b.parent else b.matrix_local
+            M[b.name] = (M[b.parent.name] @ rel if b.parent else rel) @ basis
+            w = W @ M[b.name]
+            out[b.name.split(":")[-1]] = (w.to_3x3().normalized().to_quaternion(), w.translation.copy())
+        frames.append(out)
+    rest = {}
+    for b in bones:
+        w = W @ b.matrix_local
+        rest[b.name.split(":")[-1]] = (w.to_3x3().normalized().to_quaternion(), w.translation.copy())
+    for o in objs:
+        bpy.data.objects.remove(o, do_unlink=True)
+    _CLIPS[name] = {"frames": frames, "rest": rest}
+    return _CLIPS[name]
+
+
+def _smooth(t: float) -> float:
+    t = min(1.0, max(0.0, t))
+    return t * t * (3 - 2 * t)
 
 
 def _new_objects(before):
@@ -369,6 +447,9 @@ class Character:
         self.place = empty(f"{name}_place")
         self.root.parent = self.place
         self.targets = {}
+        self.free_arms = False     # True：腕は Mixamo の動きに任せ、物にふれるときだけ IK（seat(arms="clip")）
+        self.plays = None          # Mixamo の動きの予定（play）。None のあいだは使わない
+        self.offsets = {}          # turn の記録（動きを使うときは bake で重ねる）
 
     def _fix_tails(self):
         """腕と脚の骨の先端を次の関節まで伸ばす（IK は骨の先端を行き先に合わせるため）。
@@ -465,6 +546,7 @@ class Character:
             f.target = t
         self.targets[(limb, side)] = t
         self.targets[(limb, side, "pole")] = p
+        self.targets[(limb, side, "con")] = c
         return t
 
     def move(self, limb: str, side: str, t_frame: int, target_local=None, world=None, kind="BEZIER",
@@ -519,6 +601,10 @@ class Character:
             fingers = Vector((0.12, 0.0, -0.03))
             self.move("arm", side, frame, target_local=lap(self, side))
         self.orient(side, frame, fingers, inward)
+        if self.free_arms:   # 腕が動きに任されているときは、ふれるあいだだけ IK と手の向きを効かせる
+            for c in (self.targets[("arm", side, "con")], self.targets[("aim", side)][1]):
+                c.influence = 1.0 if on else 0.0
+                c.keyframe_insert("influence", frame=frame)
 
     def reach(self, side: str, frame: int, world=None, local=None, fingers=(1, 0, 0), thumb=(0, 0, 1),
               kind="BEZIER"):
@@ -579,7 +665,11 @@ class Character:
     # 回す ------------------------------------------------------------------
     def turn(self, key: str, frame: int, pitch=0.0, yaw=0.0, roll=0.0):
         """胴・首・頭を、人形の向き基準で回してキーを打つ。
-        pitch > 0 で前にかがむ、yaw > 0 で左を向く、roll > 0 で右に首をかしげる。"""
+        pitch > 0 で前にかがむ、yaw > 0 で左を向く、roll > 0 で右に首をかしげる。
+        Mixamo の動きを使うとき（play）は、ここでは記録だけして、bake で動きの上に重ねる。"""
+        if self.plays is not None:
+            self.offsets.setdefault(key, []).append((frame, pitch, yaw, roll))
+            return
         pb = self.pb(key)
         m = self.place.matrix_world.to_3x3()
         fwd = (m @ Vector((0, -1, 0))).normalized()
@@ -593,6 +683,137 @@ class Character:
         pb.rotation_quaternion = local.to_quaternion()
         interp("BEZIER")
         pb.keyframe_insert("rotation_quaternion", frame=frame)
+
+    # Mixamo の動き -------------------------------------------------------
+    def play(self, name: str, f0: int, f1: int, blend: int = 8, loop: bool = True, speed: float = 1.0,
+             move: float = 1.0, amount: float = 1.0):
+        """f0〜f1 のコマで Mixamo の動き name を流す。あとから足したものほど上に重なり、
+        出入りの blend コマでなめらかに切り替わる。最初に足すもの（ふだんの姿勢）は全体に流す。
+        loop=False なら1回だけ流して、終わったら最後の姿勢のまま。
+        move は腰の移動の大きさ（立ち上がって前に出る動きを、机にぶつからないよう小さくするとき）。
+        amount は動きの強さ（0〜1。下の姿勢とのあいだを取って、大げさな動きを控えめにする）。"""
+        if self.plays is None:
+            self.plays = []
+        load_clip(name)
+        self.plays.append({"name": name, "f0": f0, "f1": f1, "blend": blend, "loop": loop, "speed": speed,
+                           "move": move, "amount": amount})
+
+    def _clip_pose(self, f: int):
+        """コマ f の、重ねたあとの骨の回り方（Mixamo の名前 → 休みの姿勢からの回転）と、腰の動いた量。"""
+        rot, move = {}, Vector((0, 0, 0))
+        for i, p in enumerate(self.plays):
+            if not (p["f0"] <= f <= p["f1"]):
+                continue
+            clip = _CLIPS[p["name"]]
+            n = len(clip["frames"])
+            sf = int((f - p["f0"]) * p["speed"])
+            sf = sf % n if p["loop"] else min(sf, n - 1)
+            fr = clip["frames"][sf]
+            bl = max(p["blend"], 1)
+            w = 1.0 if i == 0 else _smooth(min((f - p["f0"]) / bl, (p["f1"] - f) / bl)) * p["amount"]
+            d = (fr["Hips"][1] - clip["frames"][0]["Hips"][1]) * p["move"]
+            rest = clip["rest"]
+            for b, (q, _) in fr.items():
+                dq = q @ rest[b][0].inverted()          # 休みの姿勢からの回り方（世界の向き）
+                rot[b] = dq if (b not in rot or w >= 1) else rot[b].slerp(dq, w)
+            move = move.lerp(d, w) if i else d
+        return rot, move
+
+    def _offset(self, key: str, f: int) -> Quaternion:
+        """turn で記録した向き（コマのあいだはなめらかにつなぐ）。人形の向き基準の回転。"""
+        keys = sorted(self.offsets[key])
+        v = keys[-1][1:]
+        if f <= keys[0][0]:
+            v = keys[0][1:]
+        else:
+            for a, b in zip(keys, keys[1:]):
+                if a[0] <= f <= b[0]:
+                    t = _smooth((f - a[0]) / max(b[0] - a[0], 1))
+                    v = [x + (y - x) * t for x, y in zip(a[1:], b[1:])]
+                    break
+        pitch, yaw, roll = v
+        return Quaternion((1, 0, 0), pitch) @ Quaternion((0, 0, 1), yaw) @ Quaternion((0, -1, 0), roll)
+
+    def bake(self, f_end: int):
+        """play した動きと turn の向きを重ねて、1コマずつ骨にキーを打つ（書き出しの前に1回呼ぶ）。
+        動きは「人形の向き基準」の空間で移す：Mixamo の骨が休みの姿勢から回った分だけ、
+        人形の骨も（休みの姿勢の骨の向きを Mixamo にそろえてから）回す。脚は IK のまま（足は床から動かない）。"""
+        if not self.plays:
+            return
+        bpy.context.view_layer.update()
+        bones = self.arm.data.bones
+        some = _CLIPS[self.plays[0]["name"]]["rest"]
+        mp = {k: v for k, v in _mixamo_map(self.rig["mixamo_map"], set(bones.keys())).items() if k in some}
+        inv = {v: k for k, v in mp.items()}
+        K = self.place.matrix_world.inverted() @ self.arm.matrix_world      # 骨組みの空間 → 人形の向き基準
+        Kq = K.to_3x3().normalized().to_quaternion()
+        Kinv3 = K.inverted().to_3x3()
+        R0 = {b.name: b.matrix_local.to_3x3().normalized().to_quaternion() for b in bones}
+        pre = {}
+        for b, src_name in inv.items():   # 人形の休みの姿勢を、骨の向きだけ Mixamo の休みの姿勢にそろえる
+            t0 = Kq @ R0[b]
+            y_t = t0 @ Vector((0, 1, 0))
+            y_s = some[src_name][0] @ Vector((0, 1, 0))
+            pre[b] = y_t.rotation_difference(y_s) @ t0
+        order = sorted(bones, key=lambda b: len(b.parent_recursive))
+        hips_t = mp["Hips"]
+        scale = (K @ bones[hips_t].matrix_local).translation.z / some["Hips"][1].z
+        affected = {}
+        for key in self.offsets:
+            top = bones[self.bone(key)]
+            for b in [top] + list(top.children_recursive):
+                affected.setdefault(b.name, []).append(key)
+        keys_rot = {b.name: [] for b in order if b.name in inv}
+        keys_loc = []
+        for f in range(1, f_end + 1):
+            rot, move = self._clip_pose(f)
+            offs = {k: self._offset(k, f) for k in self.offsets}
+            Rarm = {}
+            for b in order:
+                if b.name in inv and inv[b.name] in rot:
+                    tc = rot[inv[b.name]] @ pre[b.name]
+                    for k in reversed(affected.get(b.name, [])):
+                        tc = offs[k] @ tc
+                    Rarm[b.name] = Kq.inverted() @ tc
+                elif b.parent:
+                    Rarm[b.name] = Rarm[b.parent.name] @ R0[b.parent.name].inverted() @ R0[b.name]
+                else:
+                    Rarm[b.name] = R0[b.name]
+                if b.name in keys_rot:
+                    if b.parent:
+                        basis = R0[b.name].inverted() @ R0[b.parent.name] @ Rarm[b.parent.name].inverted() @ Rarm[b.name]
+                    else:
+                        basis = R0[b.name].inverted() @ Rarm[b.name]
+                    if keys_rot[b.name] and keys_rot[b.name][-1].dot(basis) < 0:
+                        basis.negate()
+                    keys_rot[b.name].append(basis)
+            keys_loc.append(R0[hips_t].inverted() @ (Kinv3 @ (move * scale)))
+        self._write_keys(keys_rot, hips_t, keys_loc)
+
+    def _write_keys(self, keys_rot: dict, hips: str, keys_loc: list):
+        """1コマずつのキーを、F カーブにまとめて書く（keyframe_insert を何万回も呼ぶと遅いので）。"""
+        for name in list(keys_rot) + [hips]:
+            pb = self.arm.pose.bones[name]
+            pb.keyframe_insert("rotation_quaternion", frame=1)
+            pb.keyframe_insert("location", frame=1)
+        fcs = {(fc.data_path, fc.array_index): fc for fc in fcurves_of(self.arm)}
+
+        def fill(path, idx, values):
+            fc = fcs[(path, idx)]
+            kp = fc.keyframe_points
+            kp.clear()
+            kp.add(len(values))
+            co = []
+            for i, v in enumerate(values):
+                co += [i + 1, v]
+            kp.foreach_set("co", co)
+            fc.update()
+
+        for name, qs in keys_rot.items():
+            for i in range(4):
+                fill(f'pose.bones["{name}"].rotation_quaternion', i, [q[i] for q in qs])
+        for i in range(3):
+            fill(f'pose.bones["{hips}"].location', i, [v[i] for v in keys_loc])
 
     def tint_texture(self, hue_lo: float, hue_hi: float, min_sat: float, color, strength=1.0):
         """画像で色を塗っている材質の、色相が hue_lo〜hue_hi（0〜1）で彩度 min_sat 以上の部分を color にする。
@@ -641,9 +862,13 @@ class Character:
                     bsdf.inputs["Base Color"].default_value = (*color, 1)
 
 
-def seat(char: Character, loc, facing: float, seat_h=0.46, leg_pole=None, arm_pole=None):
+def seat(char: Character, loc, facing: float, seat_h=0.46, leg_pole=None, arm_pole=None, arms="ik"):
     """椅子に座らせる：体を下げ、足をひざの真下の床に、手をひざの上に置く。
-    行き先の座標は人形の向き基準（x = 前、y = 左）。置き場所の原点は下げた分だけ床より下にある。"""
+    行き先の座標は人形の向き基準（x = 前、y = 左）。置き場所の原点は下げた分だけ床より下にある。
+    arms="clip" なら、腕は Mixamo の動き（play）に任せ、物にふれるとき（touch）だけ IK を効かせる。"""
+    char.free_arms = arms == "clip"
+    if char.free_arms and char.plays is None:
+        char.plays = []
     char.put(loc, facing)
     hip = char.bone_world("upper_leg", "L")
     knee = char.bone_world("lower_leg", "L")
