@@ -1,0 +1,122 @@
+"""3D の背景で動画を作る（試作）。Blender で舞台を書き出し、声・字幕・クレジットと合わせる。
+
+    python scripts/render_3d.py -c shortshort 20261124-002                    # 全部書き出して合成
+    python scripts/render_3d.py -c shortshort 20261124-002 --stills 1,21,39   # 下見：その秒のコマだけ PNG
+    python scripts/render_3d.py -c shortshort 20261124-002 --compose-only     # コマはそのまま、合成だけやり直す
+
+入力：work/{id}/timing.json、mix.wav（render で作った声 + BGM）、subs.ass、
+      舞台のスクリプト scripts/blender/{id}.py
+出力：work/{id}/3d/frames/####.jpg → work/{id}/video_3d.mp4
+      （今の video.mp4 は上書きしない。動画CHECK の前に見比べるため）
+"""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from ai_shorts.config import add_channel_arg, script_root  # noqa: E402
+
+ROOT = script_root()
+
+from ai_shorts import ffmpeg  # noqa: E402
+from ai_shorts.config import load_project  # noqa: E402
+from ai_shorts.errors import AiShortsError, ExternalToolError  # noqa: E402
+from ai_shorts.render import credit_filter, rel_to_root, subs_filter  # noqa: E402
+
+SCENES = Path(__file__).resolve().parent / "blender"
+
+
+def blender(project, story_id: str, work: Path, out: Path, stills: str, scale: int,
+            exe_arg: str | None) -> None:
+    exe = Path(exe_arg or project.get("blender.exe", "blender"))
+    if not exe.exists():
+        raise ExternalToolError(f"Blender が見つかりません: {exe}（config の blender.exe を直してください）")
+    scene = SCENES / f"{story_id}.py"
+    if not scene.exists():
+        raise AiShortsError(f"舞台のスクリプトがありません: {scene}")
+    cmd = [str(exe), "-b", "--factory-startup", "-P", str(scene), "--",
+           "--timing", str(work / "timing.json"), "--out", str(out),
+           "--fps", str(project.get("render.fps")),
+           "--width", str(project.get("render.width")), "--height", str(project.get("render.height")),
+           "--samples", str(project.get("blender.samples", 16)), "--scale", str(scale)]
+    if stills:
+        cmd += ["--stills", stills]
+    log = out / "blender.log"
+    out.mkdir(parents=True, exist_ok=True)
+    print(f"[3d] Blender: {scene.name}（ログ: {log}）")
+    with log.open("w", encoding="utf-8", errors="replace") as f:
+        proc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
+    if proc.returncode != 0:
+        tail = "\n".join(log.read_text(encoding="utf-8", errors="replace").splitlines()[-15:])
+        raise ExternalToolError(f"Blender が失敗しました（終了コード {proc.returncode}）:\n{tail}")
+
+
+def compose(project, work: Path, out: Path) -> Path:
+    frames = out / "frames"
+    if not (frames / "0001.jpg").exists():
+        raise AiShortsError(f"{frames} にコマがありません。先に Blender で書き出してください。")
+    audio = work / "mix.wav"
+    if not audio.exists():
+        raise AiShortsError(f"{audio} がありません。先に render を実行してください。")
+    duration = ffmpeg.duration(audio)
+    if duration > float(project.get("render.max_video_seconds")):
+        raise AiShortsError(f"音声が {duration:.2f} 秒で、上限を超えています。")
+
+    def rel(p: Path) -> str:
+        return rel_to_root(project, p)
+
+    tail = [s for s in (subs_filter(project, work), credit_filter(project, work)) if s]
+    video = work / "video_3d.mp4"
+    fps = str(project.get("render.fps"))
+    ffmpeg.run(
+        [
+            "-framerate", fps, "-i", rel(frames / "%04d.jpg"),
+            "-i", rel(audio),
+            "-vf", ",".join([*tail, "format=yuv420p"]),
+            "-map", "0:v", "-map", "1:a",
+            "-t", f"{duration:.3f}", "-r", fps,
+            "-c:v", "libx264", "-preset", str(project.get("render.x264_preset", "medium")),
+            "-crf", str(project.get("render.crf", 20)), "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "192k",
+            "-movflags", "+faststart",
+            rel(video),
+        ],
+        cwd=project.root,
+    )
+    print(f"[3d] → {video}（{ffmpeg.duration(video):.2f} 秒）")
+    return video
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_channel_arg(ap)
+    ap.add_argument("story_id")
+    ap.add_argument("--stills", default="", help="この秒のコマだけ PNG で書き出す（カンマ区切り）")
+    ap.add_argument("--scale", type=int, default=100, help="解像度の %%（下見は 50）")
+    ap.add_argument("--compose-only", action="store_true", help="Blender を動かさず、合成だけやり直す")
+    ap.add_argument("--blender", help="blender.exe の場所（config の blender.exe より優先）")
+    a = ap.parse_args()
+
+    project = load_project(ROOT)
+    work = project.root / "work" / a.story_id
+    if not (work / "timing.json").exists():
+        print(f"エラー: {work / 'timing.json'} がありません。先に tts を実行してください。")
+        return 1
+    out = work / "3d"
+    try:
+        if not a.compose_only:
+            blender(project, a.story_id, work, out, a.stills, a.scale, a.blender)
+        if not a.stills:
+            compose(project, work, out)
+    except AiShortsError as e:
+        print(f"エラー: {e}")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
