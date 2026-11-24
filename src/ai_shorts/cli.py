@@ -17,7 +17,7 @@ from typing import Callable
 from . import library, qa, render, subs, tts, upload
 from .config import Project, channel_names, load_project
 from .errors import AiShortsError
-from .story import list_approved
+from .story import is_3d_story, list_approved
 
 # 実行順。images（ComfyUI）はまだないので、work/{id}/img_*.png は scripts/ で用意する
 STAGES: dict[str, Callable[[Project, str], None]] = {
@@ -88,10 +88,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def run_stages(project: Project, story_id: str) -> None:
+    """工程を順に。3D の物語（visual: 3d）は qa の前で止める：3D の舞台を書き出して採用してから qa。"""
+    three_d = is_3d_story(project, story_id)
+    for name, stage in STAGES.items():
+        if three_d and name == "qa":
+            print(f"[3d] {story_id} は 3D の物語です。qa の前に、舞台 scripts/blender/{story_id}.py を書き、"
+                  f"scripts/render_3d.py -c <ch> {story_id}（下見は --stills）→ --adopt で採用してから qa を実行してください。")
+            return
+        stage(project, story_id)
+
+
 def run_all(project: Project, args: argparse.Namespace) -> int:
     if not args.approved:
-        for stage in STAGES.values():
-            stage(project, args.id)
+        run_stages(project, args.id)
         return 0
     ids = []
     for story_id in list_approved(project):
@@ -103,8 +113,7 @@ def run_all(project: Project, args: argparse.Namespace) -> int:
     failed: list[str] = []
     for story_id in ids:
         try:
-            for stage in STAGES.values():
-                stage(project, story_id)
+            run_stages(project, story_id)
         except AiShortsError as e:
             print(f"エラー（{story_id}）: {e}", file=sys.stderr)
             failed.append(story_id)

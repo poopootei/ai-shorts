@@ -19,7 +19,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from .config import Project
+from .config import REPO, Project
 from .errors import AiShortsError
 
 STORY_STATES = ("draft", "approved", "posted", "rejected")
@@ -224,7 +224,7 @@ def _events(data: dict, event: str) -> list[dict]:
     return [h for h in data.get("history", []) if h.get("event") == event]
 
 
-def _video_state(project: Project, story_id: str) -> tuple[str, str]:
+def _video_state(project: Project, story_id: str, three_d: bool = False) -> tuple[str, str]:
     root = project.root
     if (root / "ready" / f"{story_id}.mp4").exists():
         return "動画CHECK待ち", f"ready/{story_id}.mp4 を見て OK なら approve-video、だめなら reject-video"
@@ -237,6 +237,13 @@ def _video_state(project: Project, story_id: str) -> tuple[str, str]:
                 return "QA NG", f"work/{story_id}/qa.json を見て直す"
         except json.JSONDecodeError:
             pass
+    if three_d:
+        scene = REPO / "scripts" / "blender" / f"{story_id}.py"
+        if not scene.exists():
+            return "動画づくり待ち", f"3D：all --id で声と字幕 → 舞台 scripts/blender/{story_id}.py を書く → render_3d → --adopt → qa"
+        if not (root / "work" / story_id / "visual.json").exists():
+            return "動画づくり待ち", "3D：render_3d で書き出し（下見は --stills）→ --adopt → qa"
+        return "動画づくり待ち", "3D：qa を実行する"
     return "動画づくり待ち", "背景を選んで all --id で作る"
 
 
@@ -246,10 +253,13 @@ def status(project: Project) -> list[Row]:
         for path in sorted((project.root / "stories" / state).glob("*.json")):
             data = _read(path)
             sid, title = path.stem, data.get("title", "")
+            three_d = data.get("visual") == "3d"
+            if three_d:
+                title += "［3D］"
             if state == "draft":
                 rows.append(Row(sid, title, "下書き", "検査に通して approve_story.py で承認する"))
             elif state == "approved":
-                rows.append(Row(sid, title, *_video_state(project, sid)))
+                rows.append(Row(sid, title, *_video_state(project, sid, three_d)))
             elif state == "posted":
                 posts = _events(data, "posted")
                 where = ", ".join(f"{p.get('platform')} {p.get('date')}" for p in posts)

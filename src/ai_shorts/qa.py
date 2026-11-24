@@ -149,6 +149,11 @@ def run(project: Project, story_id: str) -> None:
     images = json.loads(images_path.read_text(encoding="utf-8")) if images_path.exists() else None
     visual_path = work / "visual.json"    # 3D の映像を採用したとき（scripts/render_3d.py --adopt）
     visual = json.loads(visual_path.read_text(encoding="utf-8")) if visual_path.exists() else None
+    if story and story.is_3d:
+        # 3D の物語は、3D 版を採用した video.mp4 だけ通す（render の単色の背景のまま出さない）
+        checks.append(Check("映像", visual is not None,
+                            "3D 版を採用済み" if visual else
+                            f"3D の物語ですが、3D 版を採用していません（scripts/render_3d.py {story_id} → --adopt）"))
     description = work / "description.txt"
     if story and credit:
         description.write_text(

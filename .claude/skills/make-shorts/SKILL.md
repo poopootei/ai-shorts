@@ -17,8 +17,17 @@ description: ai-shorts で朗読ショート動画を作る全体の流れ（物
    - `py -m ai_shorts -c <ch> ideas` で、これまでのボツの理由と改善案を読み、同じ失敗を避ける。
 2. **エンジンを確かめる**：`py scripts/tts_status.py -c <ch>`。止まっていれば起動する（runbook 2）。セッションをまたぐと止まっているのが普通。
 3. **物語**：新しく書くなら write-stories スキルに従って下書き → 検査 → 自分で確認点を見て直す → `approve_story.py` で承認し、そのまま背景・合成へ進む。物語CHECK はしない（D-018）。全文をユーザーに見せて待たない。
-4. **背景**：pick-backgrounds スキルに従って、段落ごとに1枚を ID で取る。候補シートは自分で見て選び、外れ（広告・ロゴ・雰囲気違い）は除く。
+4. **映像の分かれ道**：物語 JSON の `visual` を見る（`status` では題に［3D］が付く）。
+   - 書いていない（静止画）：pick-backgrounds スキルに従って、段落ごとに1枚を ID で取る。候補シートは自分で見て選び、外れ（広告・ロゴ・雰囲気違い）は除く。
+   - `"3d"`：背景画像は選ばない。手順5の `all` が qa の前で止まるので、そのあと下の「3D の舞台」に進む。
 5. **合成**：`py -m ai_shorts -c <ch> all --id <id>`（複数なら id ごと）。止まったらエラーの文面どおりに直す（多いのは「長すぎる」→ 本文を短くしてユーザーに確認、「接続できない」→ エンジン起動）。
+   - **3D の舞台**（visual: 3d。runbook 3-3b、D-027・D-028）：
+     1. `scripts/blender/<id>.py` を書く。部品は `scripts/blender/kit.py`（人形・座る・立つ・歩く・手の行き先と向き・物を持つ・文字・家具・光）。既存の舞台（20261124-002 など）を手本にする。段取りは timing.json の文の時刻に合わせる。
+     2. 下見：`py scripts/render_3d.py -c <ch> <id> --stills <秒,...> --scale 40` → `work/<id>/3d/still_*.png` を自分で見る。人形の向き（背中ばかり写っていないか）、ひじ・ひざの曲がる向き、手が物にめり込んでいないか、小物が手で隠れていないか、文字の大きさ。直してまた下見。
+     3. 全編：`py scripts/render_3d.py -c <ch> <id>`（8〜12 分。run_in_background で）→ 書き出したら数秒おきのコマを並べて見る。
+     4. `py scripts/render_3d.py -c <ch> <id> --adopt` → `py -m ai_shorts -c <ch> qa --id <id>`。
+     - Blender の場所は config の `blender.exe`。なければ `--blender D:\blender\blender.exe`。
+     - 何本もあるときは、全部の舞台を下見まで済ませてから、全編をまとめて書き出す（書き出しの待ち時間に次の舞台を書く）。
 6. **確認**：qa が全部 OK か見る。`py scripts/preview_video.py -c <ch> <id>` のコマ画像を自分で見て、字幕・背景・クレジットの崩れがないか確かめる。数字の検査だけで終わらせない（QA は見た目の違和感までは拾えない）。
    - 字幕の切れ目も全部読む：`py -c "import json;d=json.load(open('work/<id>/subs.json',encoding='utf-8'));print(' / '.join('｜'.join(e['lines']) for e in d['events']))"`。言葉の途中（生き｜物）や2字だけの行（うまって｜いる）があれば `src/ai_shorts/subs.py` を直し、tests/test_subs.py に例を足してから `subs`・`render`・`qa` をやり直す。
 7. **動画CHECK を頼む**：`ready/<id>.mp4` をユーザーに送り（SendUserFile）、表で「タイトル・長さ・声」をまとめて、OK かボツかを聞く。説明文は `ready/<id>.txt`。

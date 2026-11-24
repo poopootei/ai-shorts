@@ -23,7 +23,7 @@ ROOT = script_root()  # チャンネルのフォルダ（channels/{name}/）。-
 from ai_shorts import ruby, userdict, voices  # noqa: E402
 from ai_shorts.config import load_project  # noqa: E402
 from ai_shorts.errors import AiShortsError  # noqa: E402
-from ai_shorts.story import split_paragraphs, split_sentences  # noqa: E402
+from ai_shorts.story import VISUALS, split_paragraphs, split_sentences  # noqa: E402
 from ai_shorts.tts import tts_text  # noqa: E402
 
 # 既定は今のチャンネル（docs/story-guidelines.md）。チャンネルごとに config の story.* で変える
@@ -86,8 +86,10 @@ def check(path: Path, project, readings: bool) -> int:
             (ng if n > body_max + 10 or n < body_min - 40 else warn).append(f"本文 {n} 字（目安 {body_min}〜{body_max}）")
         if not 2 <= len(paras) <= 3:
             ng.append(f"段落 {len(paras)} 個（2〜3）")
-        if len(d.get("image_prompts", [])) != len(paras):
+        if d.get("visual") != "3d" and len(d.get("image_prompts", [])) != len(paras):
             warn.append(f"image_prompts {len(d.get('image_prompts', []))} 個と段落 {len(paras)} 個の数が違う")
+    if d.get("visual", "") not in VISUALS:
+        ng.append(f"visual は {' / '.join(repr(v) for v in VISUALS)} のどれか（{d.get('visual')!r}）")
     if len(longest) > sentence_max:
         ng.append(f"{sentence_max} 字を超える文がある（{len(longest)} 字）: {longest}")
     if len(d.get("hook", "")) > hook_max:
@@ -114,7 +116,8 @@ def check(path: Path, project, readings: bool) -> int:
 
     print(f"== {d.get('id')}「{d.get('title')}」 {path.relative_to(ROOT) if path.is_relative_to(ROOT) else path}")
     print(f"   本文 {n} 字 / 段落 {len(paras)} / 文 {len(sentences)}（最長 {len(longest)} 字）/ hook {len(d.get('hook', ''))} 字"
-          f" / 声 {voice.key + '（' + voice.credit + '）' if voice else '?'}")
+          f" / 声 {voice.key + '（' + voice.credit + '）' if voice else '?'}"
+          f" / 映像 {'3D' if d.get('visual') == '3d' else '静止画'}")
     for m in ng:
         print(f"   NG   {m}")
     for m in warn:

@@ -24,12 +24,14 @@ Claude Code セッション内で生成する（API は使わない）。書き�
   "image_prompts": ["段落1の情景（英語）", "段落2", "段落3"],
   "tags": ["ショートショート", "朗読"],
   "voice": "ofutonp",
+  "visual": "3d",
   "approved": false,
   "notes": "人が直した点のメモ"
 }
 ```
 
 - `image_prompts` の数 = 段落の数（2〜3）。
+- `visual`：映像の作り方。書かないか `"images"` なら静止画の背景（いつもの流れ）、`"3d"` なら 3D の舞台（`scripts/blender/{id}.py` を Blender で書き出す。D-028）。3D の物語では `image_prompts` は使わない。
 - 検査（`scripts/check_story.py`）に通したら `scripts/approve_story.py` で `approved: true` にし、`stories/approved/` に移す（物語CHECK はしない。D-018）。
 
 ## 1. 音声（tts）

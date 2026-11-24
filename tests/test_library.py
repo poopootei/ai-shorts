@@ -150,3 +150,29 @@ def test_all_approved_skips_existing_videos(project, monkeypatch, capsys):
     assert main(["all", "--approved"]) == 0
     assert ran == ["c"]
     assert "スキップ（b）" in capsys.readouterr().out
+
+
+def test_status_marks_3d_stories(project):
+    put_story(project, "approved", "zz-3d-test", visual="3d")
+    put_story(project, "approved", "b")
+    rows = {r.id: r for r in library.status(project)}
+    assert rows["zz-3d-test"].title.endswith("［3D］") and "3D：" in rows["zz-3d-test"].detail
+    assert "背景を選んで" in rows["b"].detail and "［3D］" not in rows["b"].title
+    (project.root / "work" / "zz-3d-test").mkdir(parents=True)
+    (project.root / "work" / "zz-3d-test" / "visual.json").write_text("{}", encoding="utf-8")
+    assert "3D" in {r.id: r for r in library.status(project)}["zz-3d-test"].detail
+
+
+def test_all_stops_before_qa_for_3d(project, monkeypatch, capsys):
+    (project.root / "config.example.yaml").write_text("", encoding="utf-8")
+    (project.root / "config.yaml").write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("AI_SHORTS_ROOT", str(project.root))
+    put_story(project, "approved", "c", visual="3d")
+    put_story(project, "approved", "d")
+    ran = []
+    import ai_shorts.cli as cli
+    monkeypatch.setattr(cli, "STAGES", {n: (lambda n: lambda p, sid: ran.append((n, sid)))(n)
+                                        for n in ("tts", "render", "qa")})
+    assert main(["all", "--approved"]) == 0
+    assert ran == [("tts", "c"), ("render", "c"), ("tts", "d"), ("render", "d"), ("qa", "d")]
+    assert "3D の物語" in capsys.readouterr().out

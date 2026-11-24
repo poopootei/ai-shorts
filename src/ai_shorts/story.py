@@ -31,6 +31,12 @@ class Story:
     breakdown: list[dict] = field(default_factory=list)
     next: str = ""   # 最後に出す「次の1文」の予告（英語）。about があればそちらを出す
     about: str = ""  # 最後に出す、作品の出典と背景の一文（英語）。見出しは About this story
+    # 映像：空か "images" = 静止画の背景（いつもの流れ）、"3d" = 3D の舞台（scripts/blender/{id}.py。D-028）
+    visual: str = ""
+
+    @property
+    def is_3d(self) -> bool:
+        return self.visual == "3d"
 
     @property
     def paragraphs(self) -> list[str]:
@@ -85,6 +91,18 @@ def load_approved(project: Project, story_id: str) -> Story:
         return Story(**{k: v for k, v in data.items() if k in known})
     except TypeError as e:
         raise StoryError(f"{path} に必要な項目がありません: {e}") from e
+
+
+VISUALS = ("", "images", "3d")
+
+
+def is_3d_story(project: Project, story_id: str) -> bool:
+    """承認済みの物語が 3D で作るものか（JSON の visual。読めなければ False）。"""
+    path = project.root / "stories" / "approved" / f"{story_id}.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("visual") == "3d"
+    except (OSError, json.JSONDecodeError):
+        return False
 
 
 def list_approved(project: Project) -> list[str]:

@@ -52,12 +52,13 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 
 ```
 物語（Claude が書いて検査・承認）→ 背景 → 合成・QA → 動画CHECK（人）→ 投稿（人）→ 記録
+                                   └ 3D の物語（visual: 3d）は、背景の代わりに 3D の舞台（3-3b）
 ```
 
 | 状態 | 物語 | 動画 | 次にやること |
 |---|---|---|---|
 | 下書き | `stories/draft/` | – | 検査に通して approve_story.py で承認（物語CHECK はしない） |
-| 動画づくり待ち／QA NG | `stories/approved/` | `work/<id>/` | 背景を選んで合成 |
+| 動画づくり待ち／QA NG | `stories/approved/` | `work/<id>/` | 背景を選んで合成（3D の物語は舞台を書いて書き出す。一覧では題に［3D］） |
 | 動画CHECK待ち | `stories/approved/` | `ready/` | スマホで見て OK かボツ |
 | 投稿待ち | `stories/approved/` | `upload/` | YouTube Studio で投稿 |
 | 投稿済み | `stories/posted/` | `posted/` | – |
@@ -70,6 +71,7 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 ### 3-1. 物語を書く（Claude Code セッション内）
 - [story-guidelines.md](story-guidelines.md) に沿って書き、`stories/draft/{YYYYMMDD-NNN}.json` に保存する。id は作った日付＋連番。
 - `"voice"` に雰囲気に合う声の候補を入れる（`config.yaml` の `voices`）。
+- 3D で作るなら `"visual": "3d"`（目安は 3-3b）。書かなければ静止画。
 - `image_prompts` は段落の数だけ（英語）。`notes` に背景の検索語の候補を書いておくと次が楽。
 - 検査：`.venv\Scripts\python scripts\check_story.py stories\draft\<id>.json --readings`
   - NG を直す。読み間違いは 5 の手順で辞書に足す（辞書で直らないものは文を書き換える）。
@@ -87,6 +89,17 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
    - 広告・ブランドロゴ・実在の人物が目立つもの、絵柄が浮くもの（古い図版など）は避ける。
 2. ID で取る：`.venv\Scripts\python scripts\fetch_stock_images.py --id <id> --query "id:<ID1>" --query "id:<ID2>" --query "id:<ID3>"`
    - 出典とライセンスは `work/<id>/images.json` に残る。
+
+### 3-3b. 3D の舞台（visual: 3d の物語。D-027・D-028）
+- 3D に向く話：場所がひとつか2つ、人が3人まで、動きが部品にあるもの（座る・立つ・歩く・手を物にのせる・物を持つ・うなずく／首をかしげる）、小物が箱・瓶・札くらいの形。向かない話：人ごみ（満員電車・行列・店の客）、場所をいくつも移る話、宇宙・動物など部品にないもの。
+- 準備（一度だけ）：Blender 5.2 LTS を `D:\blender` に置き、`config.yaml` に `blender:`（`config.example.yaml` を写す）を足す。足していなければ `--blender D:\blender\blender.exe` を付ける。
+- 流れ：
+  1. `.venv\Scripts\python -m ai_shorts -c <ch> all --id <id>`：3D の物語は tts → subs → render（声・BGM・字幕）で止まる。背景画像は選ばない。
+  2. 舞台 `scripts/blender/<id>.py` を書く（部品は `scripts/blender/kit.py`、例は既存の舞台）。
+  3. 下見：`.venv\Scripts\python scripts\render_3d.py -c <ch> <id> --stills 1,10,20,30 --scale 40` → `work/<id>/3d/still_*.png` を見て直す（数秒〜2分）。
+  4. 全編：`.venv\Scripts\python scripts\render_3d.py -c <ch> <id>` → `work/<id>/video_3d.mp4`（1本 8〜12 分）。
+  5. 採用：`... render_3d.py -c <ch> <id> --adopt` → `qa`。qa は、3D の物語で 3D 版を採用していないと「映像」で NG にする。
+- 静止画で作った物語を 3D に作り直すときも同じ（`--adopt` が前の版を `video_static.mp4` に残す）。
 
 ### 3-4. 合成
 - `.venv\Scripts\python -m ai_shorts -c <ch> all --id <id>`（tts → subs → render → qa）
