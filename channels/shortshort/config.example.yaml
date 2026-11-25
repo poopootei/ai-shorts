@@ -77,7 +77,7 @@ blender:
   exe: D:\blender\blender.exe   # Blender 5.2 LTS（ポータブル版）
   samples: 16                   # EEVEE のサンプル数。多いほどきれいで遅い
   credit: 3D（Blender）                                   # 3D 版を採用したとき、説明文の「映像：」に書く（ふつう：自前の人形 own_*.glb）
-  credit_quaternius: 3D（Blender）、人形：Quaternius（CC0）   # 舞台が Quaternius の人形を使ったとき（D-029 より前の4本）
+  credit_quaternius: 3D（Blender）、人形：Quaternius（CC0）   # 舞台が Quaternius の人形を使ったとき（D-031 より前の4本）
 
 qa:
   lufs_tolerance: 1.0

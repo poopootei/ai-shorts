@@ -1,4 +1,4 @@
-"""自前の人形（老若男女）を Blender の中で作り、glb に書き出す（docs/decisions.md D-029）。
+"""自前の人形（老若男女）を Blender の中で作り、glb に書き出す（docs/decisions.md D-031）。
 
     D:\\blender\\blender.exe -b --factory-startup -P scripts/blender/make_characters.py -- [--only young_man,old_woman] [--preview DIR]
 
