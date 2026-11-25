@@ -209,6 +209,20 @@
 - 差し替えた4本（嘘発見器・二人目の僕・思い出の質屋・予約席）にも `"visual": "3d"` を入れた。
 - 手順：runbook 3-3b、make-shorts スキル。
 
+## D-029 2026-11-25 ショートショートの字幕は Noto Sans JP Black にし、画面の声のクレジットをやめる
+- ユーザーの希望で、字幕（本文・hook）のフォントを Noto Serif JP Medium（D-009）から Noto Sans JP Black に変えた。D-009 と同じく notofonts/noto-cjk の SubsetOTF（OFL 1.1）を `assets/fonts/NotoSansJP-Black.otf` に置き、ライセンス文は `assets/fonts/licenses/LICENSE-NotoSansJP.txt`。
+- libass はファミリー名（name ID 1）で探すので、config の font_name は "Noto Sans JP Black"。
+- 左上の声のクレジット（`render.show_credit_overlay`）は出さない。声のクレジットは説明文に出す（qa が検査する）。「物語で学ぶ日本語」（D-025 のころから false）と同じ。
+- 投稿待ち（upload/）の8本をこの設定で作り直した（3D の4本は Blender のコマはそのままで、合成だけやり直した）。
+
+## D-030 2026-11-25 ショートショートの字幕を大きくし、読んでいるところに色を塗る（カラオケ字幕）
+- 「フォントが小さい」との指摘と、参考の動画（白い大きな字が、読まれたところから左へ順に青く塗られる）を受けて決めた。
+- 大きさ：subs.font_size 92 → 140（1行10字のまま。Noto Sans JP の全角1字は 大きさ × 0.69 なので 10字 ≒ 970px）。hook も 140（1行7字）。縁取り 6 → 10。
+- 塗り方：`subs.karaoke: true`、色は `subs.karaoke_colour`（#5AC8FA、読む前は白）。ASS の kf タグで1字ずつ左から塗る。
+- 1字ごとの時刻：timing.json は文の始まりと終わりしか持たないので、`karaoke.py` が voice.wav から話し始め・話し終わりと文の中の間（0.15 秒以上の無音）を探し、読点と対応させる。間と間のあいだは、字の重み（かな1、漢字1.8、小さいかな・記号0）で割る。エンジンの読みは使わない（tts を作り直さずに済み、3D の版のコマもそのまま使える）。漢字の読みの長さは平均で見積もるので、句の中では少しずれることがある。
+- 行の切り替えも読みに合わせる（次の行は、読み始める 0.1 秒前に出す）。
+- 学習者向け（subs.mode: learner）とレッスン形式（nihongo）は対象外。
+
 ## D-031 2026-11-25 3D の人形を自前で作る（老若男女の4体。Blender のスクリプトで生成）
 - ユーザー：「フリーのモデルではインパクトに欠ける。老若男女くらいの自分のモデルを持ち、主要な動作もテンプレートにして、手戻りを少なく」「Blender で独自のモデルを作りたい」。
 - 作り方：`scripts/blender/make_characters.py` が Blender の中で4体を作り、`assets/3d/characters/own_*.glb` に書き出す。手で直さず、数値（SPECS）を直して作り直す。

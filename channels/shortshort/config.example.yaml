@@ -38,21 +38,23 @@ comfyui:
   height: 1920
 
 subs:
-  font_file: ../../assets/fonts/NotoSerifJP-Medium.otf
-  font_name: Noto Serif JP Medium  # libass はファミリー名（name ID 1）で探す
-  font_size: 92              # 1行10字 × 92px = 920px（左右に余白80pxずつ）。2026-11-20 スマホで小さいとの指摘で 80 → 92
-  outline: 6
+  font_file: ../../assets/fonts/NotoSansJP-Black.otf   # 2026-11-25 ユーザーの希望で Noto Serif JP Medium → Noto Sans JP Black（OFL 1.1）
+  font_name: Noto Sans JP Black  # libass はファミリー名（name ID 1）で探す
+  font_size: 140             # 全角1字の幅は 大きさ × 0.69（em）。10字 × 97px ≒ 970px。2026-11-25 小さいとの指摘で 92 → 140（D-030）
+  outline: 10
   max_chars_per_line: 10
   position_y_ratio: 0.45    # 画面上端からの割合。下20%には置かない
   linger_seconds: 0.3       # 文の読み終わりのあと、字幕を残す長さ（次の文までの間を超えない）
   hook_seconds: 2.0         # 冒頭に hook を出す長さ
   hook_alone: true          # hook は最初の文が始まるまでに消し、本文の字幕と重ねない（D-013）
-  hook_font_size: 104
-  hook_max_chars_per_line: 8
+  hook_font_size: 140
+  hook_max_chars_per_line: 7
   hook_position_y_ratio: 0.40
   hook_box: true            # hook を半透明の帯で囲んで、本文と見分けやすくする
   hook_box_opacity: 0.75    # 帯の濃さ（0 = 透明、1 = 真っ黒）
   hook_box_padding: 36      # 文字のまわりの帯の余白（px）
+  karaoke: true             # 読んでいるところを左から塗る（voice.wav から1字ごとの時刻を見積もる。D-030）
+  karaoke_colour: "#5AC8FA"  # 塗る色（読む前は白）
 
 render:
   width: 1080
@@ -67,7 +69,7 @@ render:
   background_color: "0x14141c"  # img_1.png がないときの背景
   crf: 20
   x264_preset: medium
-  show_credit_overlay: true
+  show_credit_overlay: false   # 画面には声のクレジットを出さない（説明文には出す。2026-11-25 ユーザーの判断）
   credit_font_size: 34
   credit_margin: 40         # 左端からの px
   credit_y_ratio: 0.06      # 上端からの割合

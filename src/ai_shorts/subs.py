@@ -6,6 +6,8 @@
 長いひらがなの続きは助詞の後で切り、「この」で行を終えたり漢字1字で行を始めたりしないようにする。冒頭 hook_seconds 秒は hook を大きく出す。
 hook_alone なら hook は最初の文が始まるまでに消し、本文の字幕と重ねない（D-013）。
 hook_box なら hook を半透明の帯で囲み、本文と見た目でも区別する。
+karaoke なら voice.wav から1字ごとの時刻を見積もり（karaoke.py）、読んでいるところを karaoke_colour で
+左から塗る（ASS の kf タグ）。行の切り替えも読み始めに合わせる（次の行は読み始める KARAOKE_LEAD 秒前に出す）。
 subs.json は qa が行の長さと位置を検査するのに使う。
 """
 
@@ -16,7 +18,7 @@ import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from . import ruby
+from . import karaoke, ruby
 from .config import Project
 from .errors import AiShortsError
 from .story import load_approved
@@ -57,6 +59,7 @@ class Event:
     x: int | None = None   # None なら画面の中央（ルビは漢字の真上に置く）
     size: int | None = None  # None ならスタイルの大きさ（分解のかたまりだけ大きくする、など）
     layer: int = 0           # レッスン形式では、板（Panel）を 0、文字を 1 にして板の上に描く
+    syllables: list | None = None  # カラオケ：[字, 読み始め, 読み終わり]（秒）。None なら塗らない
 
 
 def _is_hiragana(c: str) -> bool:
@@ -188,10 +191,15 @@ def wrap(text: str, max_chars: int) -> list[str]:
     return lines[::-1]
 
 
+KARAOKE_LEAD = 0.1   # 次の行を、読み始めるこの秒数前に出す
+
+
 def build_events(
     timing: dict, hook: str, *, max_chars: int, linger: float, sub_y: int,
     hook_seconds: float, hook_max_chars: int, hook_y: int, hook_alone: bool = False,
+    voice: tuple | None = None,
 ) -> list[Event]:
+    """voice = (音声, サンプリング周波数) を渡すと、カラオケの時刻を付け、行の切り替えも読みに合わせる。"""
     events: list[Event] = []
     sentences = timing["sentences"]
     hook_end = hook_seconds
@@ -201,11 +209,26 @@ def build_events(
         events.append(Event(0.0, round(hook_end, 3), "Hook", wrap(hook, hook_max_chars), hook_y))
 
     for k, s in enumerate(sentences):
-        lines = wrap(display_text(s["text"]), max_chars)
+        text = display_text(s["text"])
+        lines = wrap(text, max_chars)
         total = sum(len(line) for line in lines)
         t = s["start"]
         span = s["end"] - s["start"]
         next_start = sentences[k + 1]["start"] if k + 1 < len(sentences) else timing["duration"]
+        if voice is not None and "".join(lines) == text:
+            times = karaoke.char_times(text, karaoke.find_speech(voice[0], voice[1], s["start"], s["end"]))
+            offsets = [sum(len(x) for x in lines[:i]) for i in range(len(lines) + 1)]
+            for li, line in enumerate(lines):
+                o = offsets[li]
+                if li == len(lines) - 1:
+                    end = s["end"] + min(linger, max(0.0, next_start - s["end"]))
+                else:
+                    end = max(times[o + len(line) - 1][1], times[offsets[li + 1]][0] - KARAOKE_LEAD)
+                sylls = [[c, round(times[o + i][0], 3), round(times[o + i][1], 3)]
+                         for i, c in enumerate(line)]
+                events.append(Event(round(t, 3), round(end, 3), "Sub", [line], sub_y, syllables=sylls))
+                t = end
+            continue
         for li, line in enumerate(lines):
             end = t + span * len(line) / total
             if li == len(lines) - 1:
@@ -539,8 +562,29 @@ def _ass_escape(text: str) -> str:
     return text.replace("\\", "＼").replace("{", "｛").replace("}", "｝")
 
 
+def _karaoke_text(e: Event) -> str:
+    r"""1字ごとに \kf（左から塗る）を付ける。字の前の間は \k で待つ。時刻は ASS と同じく 1/100 秒に丸める。"""
+    prev = int(round(e.start * 100))
+    parts = []
+    for c, a, b in e.syllables or []:
+        a_cs, b_cs = max(prev, int(round(a * 100))), int(round(b * 100))
+        wait = a_cs - prev
+        tags = (rf"\k{wait}" if wait > 0 else "") + rf"\kf{max(0, b_cs - a_cs)}"
+        parts.append("{" + tags + "}" + _ass_escape(c))
+        prev = max(a_cs, b_cs)
+    return "".join(parts)
+
+
+def ass_colour(rgb: str) -> str:
+    """"#RRGGBB" → ASS の "&H00BBGGRR"。"""
+    h = rgb.lstrip("#")
+    if len(h) != 6:
+        raise AiShortsError(f"色は #RRGGBB で書いてください: {rgb}")
+    return f"&H00{h[4:6]}{h[2:4]}{h[0:2]}".upper()
+
+
 def to_ass(events: list[Event], *, width: int, height: int, font_name: str,
-           font_size: int, hook_font_size: int, outline: float,
+           font_size: int, hook_font_size: int, outline: float, karaoke_colour: str | None = None,
            hook_box: bool = False, hook_box_opacity: float = 0.75, hook_box_padding: float = 36,
            ruby_size: int = 0, en_size: int = 0, label_size: int = 0,
            lesson: bool = False, panel_opacity: float = 0.6, label_pad: float = 22) -> str:
@@ -550,7 +594,7 @@ def to_ass(events: list[Event], *, width: int, height: int, font_name: str,
 
     def style(name: str, size: int, border: float, box: bool = False,
               colour: str = "&H00FFFFFF", box_colour: str | None = None,
-              pad: float | None = None) -> str:
+              pad: float | None = None, secondary: str = "&H000000FF") -> str:
         # BorderStyle 3 は縁取りの代わりに箱を描く（箱の色 = OutlineColour、Outline = 文字のまわりの余白）
         if box:
             alpha = round((1 - max(0.0, min(1.0, hook_box_opacity))) * 255)
@@ -558,7 +602,7 @@ def to_ass(events: list[Event], *, width: int, height: int, font_name: str,
             border_style, border = 3, hook_box_padding if pad is None else pad
         else:
             outline_colour, border_style = "&H00000000", 1
-        return (f"Style: {name},{font_name},{size},{colour},&H000000FF,{outline_colour},&H64000000,"
+        return (f"Style: {name},{font_name},{size},{colour},{secondary},{outline_colour},&H64000000,"
                 f"0,0,0,0,100,100,0,0,{border_style},{border:g},0,5,0,0,0,1")
 
     def lesson_styles() -> list[str]:
@@ -578,7 +622,9 @@ def to_ass(events: list[Event], *, width: int, height: int, font_name: str,
         "[Script Info]", "ScriptType: v4.00+", f"PlayResX: {width}", f"PlayResY: {height}",
         "WrapStyle: 2", "ScaledBorderAndShadow: yes", "",
         "[V4+ Styles]", style_fmt,
-        style("Sub", font_size, 3.0 if lesson else outline),
+        # カラオケでは、読む前 = SecondaryColour（白）、読んだあと = PrimaryColour（塗る色）
+        (style("Sub", font_size, outline, colour=karaoke_colour, secondary="&H00FFFFFF")
+         if karaoke_colour and not lesson else style("Sub", font_size, 3.0 if lesson else outline)),
         style("Hook", hook_font_size, outline * 1.5, hook_box),
         # 学習者向け：ルビは小さく、英訳は淡い黄色で日本語と見分ける（ASS の色は &HAABBGGRR）
         *([style("Ruby", ruby_size, max(2.0, outline * 0.6))] if ruby_size and not lesson else []),
@@ -598,7 +644,8 @@ def to_ass(events: list[Event], *, width: int, height: int, font_name: str,
             continue
         fade = r"\fad(0,250)" if e.style == "Hook" else ""
         fs = f"\\fs{e.size}" if e.size else ""
-        text = r"\N".join(_ass_escape(line) for line in e.lines)
+        text = (_karaoke_text(e) if e.syllables
+                else r"\N".join(_ass_escape(line) for line in e.lines))
         x = width // 2 if e.x is None else e.x
         layer = max(e.layer, 1) if lesson else e.layer
         out.append(
@@ -625,6 +672,7 @@ def run(project: Project, story_id: str) -> None:
     ruby_size = int(project.get("subs.ruby_font_size", 0)) if learner else 0
     en_size = int(project.get("subs.en_font_size", 0)) if learner else 0
     label_size = int(project.get("subs.label_font_size", 40)) if lesson else 0
+    karaoke_on = bool(project.get("subs.karaoke", False)) and not learner   # 学習者向け・レッスン形式は対象外
     common = dict(
         max_chars=int(project.get("subs.max_chars_per_line")),
         sub_y=round(height * float(project.get("subs.position_y_ratio"))),
@@ -666,14 +714,23 @@ def run(project: Project, story_id: str) -> None:
             em=em_ratio(project.path(project.get("subs.font_file"))), **common,
         )
     else:
+        voice = None
+        if karaoke_on:
+            voice_path = work / "voice.wav"
+            if not voice_path.exists():
+                raise AiShortsError(f"{voice_path} がありません（カラオケの時刻に使う）。先に tts を実行してください。")
+            import soundfile as sf
+            audio, sr = sf.read(voice_path, dtype="float32")
+            voice = (audio.mean(axis=1) if audio.ndim > 1 else audio, sr)
         events = build_events(
             timing, story.hook, linger=float(project.get("subs.linger_seconds")),
-            hook_alone=bool(project.get("subs.hook_alone", False)), **common,
+            hook_alone=bool(project.get("subs.hook_alone", False)), voice=voice, **common,
         )
     ass = to_ass(
         events, width=width, height=height, font_name=project.get("subs.font_name"),
         font_size=font_size, hook_font_size=hook_font_size,
         outline=float(project.get("subs.outline")),
+        karaoke_colour=ass_colour(project.get("subs.karaoke_colour", "#5AC8FA")) if karaoke_on else None,
         hook_box=bool(project.get("subs.hook_box", False)),
         hook_box_opacity=float(project.get("subs.hook_box_opacity", 0.75)),
         hook_box_padding=float(project.get("subs.hook_box_padding", 36)),

@@ -31,6 +31,11 @@
       "date": "2026-11-25",
       "event": "video_approved",
       "note": "3D 版（Blender）に差し替え。ユーザー：「このくらいのクオリティならOK」。静止画の版は work/20261124-002/video_static.mp4"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "video_approved",
+      "note": "字幕を Noto Sans JP Black・大きさ140・カラオケ（読んでいるところを水色で塗る）にし、左上の声のクレジットを外した版に差し替え（D-029・D-030）。ユーザー：「8本とも OK」"
     }
   ]
 }

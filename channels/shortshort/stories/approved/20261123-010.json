@@ -27,6 +27,11 @@
       "date": "2026-11-23",
       "event": "video_approved",
       "note": "OK"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "video_approved",
+      "note": "字幕を Noto Sans JP Black・大きさ140・カラオケ（読んでいるところを水色で塗る）にし、左上の声のクレジットを外した版に差し替え（D-029・D-030）。ユーザー：「8本とも OK」"
     }
   ]
 }
