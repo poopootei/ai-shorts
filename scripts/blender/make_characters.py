@@ -47,7 +47,7 @@ BASE = dict(
     head=(0.44, 0.45, 0.50), jaw=(0.36, 0.36, 0.28), nose=0.05, ears=True,
     eye=dict(x=0.165, z=-0.05, w=0.075, h=0.11, hl=True), brow=dict(z=0.12, len=0.14, t=0.022, arch=0.02, tilt=0.0),
     mouth=dict(z=-0.27, w=0.11, t=0.016, smile=0.03), blush=False, lashes=False,
-    hair="short", glasses=False, mustache=False,
+    hair="short", glasses=False, mustache=False, face="dot",   # 顔の型は E 点目（2026-11-25 ユーザーが選んだ）
     sleeve=1.0, top_hem=-0.1, bottom="pants", pants_hem=None, skirt_hem=None, flare=0.25,
     v_neck=None, buttons=0, hood=False, collar=False, cuffs=True, rolled=False,
     colors=dict(skin="#F2C8A6", hair="#2B1D16", top="#E9A23B", inner="#F4F1EA", bottom="#33476E",
@@ -99,7 +99,21 @@ SPECS = {
 }
 
 
-def spec_of(name: str) -> dict:
+# 顔の型。目の描き方と、まゆ・口・ほお紅の大きさの倍率（人形ごとの数値にかける）。
+# 見比べ：make_characters.py -- --compare bead,sparkle,googly,lidded,dot --preview DIR
+FACES = {
+    "bead": dict(label="黒目だけ", eye=(1.0, 1.0), brow_t=1.0, brow_len=1.0, mouth_w=1.0, smile=1.0, mouth_t=1.0, blush=1.0),
+    "sparkle": dict(label="キラキラ", eye=(1.3, 1.25), brow_t=0.9, brow_len=1.0, mouth_w=0.9, smile=1.2, mouth_t=1.0,
+                    blush=1.1),
+    "googly": dict(label="白目と黒目", eye=(1.45, 1.2), brow_t=1.1, brow_len=1.1, mouth_w=1.25, smile=1.8, mouth_t=1.15,
+                   blush=1.1),
+    "lidded": dict(label="白目とまぶた", eye=(1.45, 1.2), brow_t=1.2, brow_len=1.1, mouth_w=1.2, smile=1.4, mouth_t=1.15,
+                   blush=1.0),
+    "dot": dict(label="点目", eye=(0.62, 0.62), brow_t=1.6, brow_len=0.8, mouth_w=1.35, smile=2.2, mouth_t=1.2, blush=1.5),
+}
+
+
+def spec_of(name: str, face: str | None = None) -> dict:
     s = {k: (dict(v) if isinstance(v, dict) else v) for k, v in BASE.items()}
     for k, v in SPECS[name].items():
         if isinstance(v, dict) and isinstance(s.get(k), dict):
@@ -107,6 +121,15 @@ def spec_of(name: str) -> dict:
         else:
             s[k] = v
     s["name"] = name
+    if face:
+        s["face"] = face
+    f = FACES[s["face"]]
+    s["brow"]["t"] *= f["brow_t"]
+    s["brow"]["len"] *= f["brow_len"]
+    s["mouth"]["w"] *= f["mouth_w"]
+    s["mouth"]["smile"] *= f["smile"]
+    s["mouth"]["t"] *= f["mouth_t"]
+    s["blush_scale"] = f["blush"]
     return s
 
 
@@ -279,7 +302,7 @@ class Builder:
         if key not in self.mats:
             c = self.s["colors"]
             rough = {"eye": 0.15, "glass": 0.3, "eye_hl": 0.3, "mouth": 0.5, "skin": 0.55, "hair": 0.5}.get(key, 0.7)
-            hexc = {"eye_hl": "#FFFFFF", "brow": c["hair"]}.get(key) or c[key]
+            hexc = {"eye_hl": "#FFFFFF", "eye_white": "#F7F6F2", "brow": c["hair"]}.get(key) or c[key]
             self.mats[key] = make_material(key, hexc, rough=rough)
         return self.mats[key]
 
@@ -462,15 +485,7 @@ class Builder:
         fz = L["face_z"]
         e, br, mo = s["eye"], s["brow"], s["mouth"]
         for S, k in (("L", 1), ("R", -1)):
-            loc, n = self.hit_front(k * e["x"], fz + e["z"])
-            R = frame_from_normal(n)
-            M = Matrix.Translation(loc - n * 0.012 * hh) @ R.to_4x4() @ Matrix.Diagonal(
-                (e["w"] * hh, 0.03 * hh, e["h"] * hh, 1))
-            self.add(f"eye_{S}", sphere_bm(M), "eye", {"Head": 1.0, f"fx_eye_{S}": 1.0})
-            if e["hl"]:
-                c = loc + n * 0.016 * hh + R @ Vector((-k * e["w"] * 0.3 * hh, 0, e["h"] * 0.38 * hh))
-                M = Matrix.Translation(c) @ R.to_4x4() @ Matrix.Diagonal((0.022 * hh, 0.008 * hh, 0.026 * hh, 1))
-                self.add(f"eyehl_{S}", sphere_bm(M, 10, 6), "eye_hl", {"Head": 1.0, f"fx_eye_{S}": 1.0})
+            self.eye(S, k)
             if s["lashes"]:
                 xo = k * (e["x"] + e["w"] * 0.95)
                 pts = []
@@ -493,8 +508,14 @@ class Builder:
             self.add(f"brow_{S}", bm, "brow", {"Head": 1.0, f"fx_brow_{S}": 1.0})
             if s["blush"]:
                 pl, pn = self.hit_front(k * (e["x"] + 0.06), fz + e["z"] - 0.13)
+                b = s["blush_scale"]
                 M = Matrix.Translation(pl - pn * 0.004 * hh) @ frame_from_normal(pn).to_4x4() @ Matrix.Diagonal(
-                    (0.07 * hh, 0.01 * hh, 0.035 * hh, 1))
+                    (0.07 * b * hh, 0.01 * hh, 0.035 * b * hh, 1))
+                self.add(f"cheek_{S}", sphere_bm(M, 16, 8), "cheek", {"Head": 1.0})
+            elif s["face"] == "dot":   # 点目はほお紅でかわいさを足す（男にも）
+                pl, pn = self.hit_front(k * (e["x"] + 0.07), fz + e["z"] - 0.12)
+                M = Matrix.Translation(pl - pn * 0.004 * hh) @ frame_from_normal(pn).to_4x4() @ Matrix.Diagonal(
+                    (0.075 * hh, 0.01 * hh, 0.035 * hh, 1))
                 self.add(f"cheek_{S}", sphere_bm(M, 16, 8), "cheek", {"Head": 1.0})
         # 口
         pts = []
@@ -514,11 +535,81 @@ class Builder:
         if s["glasses"]:
             self.glasses()
 
+    def eye(self, S, k):
+        """片方の目（顔の型 s["face"] で描き分ける）。どの部品も fx_eye_{S} に入れる（まばたき・驚きの形状キー）。"""
+        s, L, hh = self.s, self.L, self.hh
+        e = s["eye"]
+        f = FACES[s["face"]]
+        W, H = e["w"] * f["eye"][0], e["h"] * f["eye"][1]
+        self.eye_wh = (W, H)
+        loc, n = self.hit_front(k * e["x"], L["face_z"] + e["z"])
+        R = frame_from_normal(n)
+        g = {"Head": 1.0, f"fx_eye_{S}": 1.0}
+
+        def ell(name, center, size, mat, segs=20, rings=10):
+            M = Matrix.Translation(center) @ R.to_4x4() @ Matrix.Diagonal((size[0] * hh, size[1] * hh, size[2] * hh, 1))
+            return self.add(name, sphere_bm(M, segs, rings), mat, g)
+
+        def at(x, out, z):   # 目の中心からの位置（x = 外向き、out = 顔の外へ、z = 上）。hh
+            return loc + R @ Vector((k * x * hh, 0, z * hh)) + n * out * hh
+
+        def arc(name, a0, a1, rx, rz, out, r, mat, flick=0.0):
+            pts = []
+            for i in range(9):
+                a = math.radians(a0 + (a1 - a0) * i / 8)
+                x, z = rx * math.cos(a), rz * math.sin(a)
+                if flick and i == 8:
+                    x, z = x + flick, z + flick * 0.5
+                pts.append(at(x, out, z))
+            bm = bmesh.new()
+            sweep(bm, pts, [r * hh * fct for fct in (0.6, 0.9, 1, 1, 1, 1, 1, 0.85, 0.5)], prof=8)
+            return self.add(name, bm, mat, g)
+
+        style = s["face"]
+        if style in ("bead", "sparkle", "dot"):
+            ell(f"eye_{S}", loc - n * 0.012 * hh, (W, 0.03, H), "eye")
+            if style == "bead" and e["hl"]:
+                ell(f"eyehl_{S}", at(-W * 0.3, 0.016, H * 0.38), (0.022, 0.008, 0.026), "eye_hl", 10, 6)
+            if style == "sparkle":
+                ell(f"eyehl_{S}", at(W * 0.28, 0.017, H * 0.36), (W * 0.36, 0.008, H * 0.33), "eye_hl", 12, 6)
+                ell(f"eyehl2_{S}", at(-W * 0.3, 0.016, -H * 0.42), (W * 0.17, 0.006, H * 0.15), "eye_hl", 10, 6)
+                arc(f"lid_{S}", 160, 15, W * 1.08, H * 1.02, 0.012, 0.017, "eye", flick=0.03)
+        else:   # googly / lidded：白目の上に黒目
+            depth = 0.045
+            ell(f"white_{S}", loc - n * 0.01 * hh, (W, depth, H), "eye_white", 24, 12)
+            front = depth - 0.01
+            pw, ph = W * 0.55, H * 0.62
+            ell(f"eye_{S}", at(-W * 0.12, front - 0.006, -H * 0.08), (pw, 0.012, ph), "eye")
+            ell(f"eyehl_{S}", at(-W * 0.12 + pw * 0.35, front + 0.006, -H * 0.08 + ph * 0.4), (pw * 0.32, 0.006, ph * 0.3),
+                "eye_hl", 10, 6)
+            if style == "googly":
+                arc(f"lid_{S}", 165, 15, W * 1.02, H * 1.0, 0.0, 0.016, "eye")
+            else:
+                # 上まぶた：白目より少し大きい楕円体の上の部分（肌の色）。下の縁に線
+                cut = 0.3
+                bm = bmesh.new()
+                bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=14, radius=1.0)
+                bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < cut], context="VERTS")
+                M = Matrix.Translation(loc - n * 0.008 * hh) @ R.to_4x4() @ Matrix.Diagonal(
+                    (W * 1.07 * hh, (depth + 0.012) * hh, H * 1.07 * hh, 1))
+                bmesh.ops.transform(bm, matrix=M, verts=bm.verts)
+                self.add(f"lidskin_{S}", bm, "skin", g)
+                rx = W * 1.07 * math.sqrt(1 - cut * cut)
+                pts = []
+                for i in range(11):
+                    a = math.pi * i / 10
+                    x = rx * math.cos(a)
+                    yo = (depth + 0.012) * math.sqrt(max(0.0, 1 - cut * cut - (x / (W * 1.07)) ** 2)) - 0.008
+                    pts.append(at(x, yo + 0.004, H * 1.07 * cut))
+                bm = bmesh.new()
+                sweep(bm, pts, [0.016 * hh] * len(pts), prof=8)
+                self.add(f"lid_{S}", bm, "eye", g)
+
     def glasses(self):
         s, L, hh = self.s, self.L, self.hh
         e = s["eye"]
         fz = L["face_z"] + e["z"]
-        r = max(e["w"], e["h"]) * 1.55 + 0.02
+        r = max(*self.eye_wh) * 1.45 + 0.03
         y_front = min(self.hit_front(k * e["x"], fz)[0].y for k in (1, -1)) / hh - 0.05
         bm = bmesh.new()
         inner = {}
@@ -826,16 +917,18 @@ class Builder:
                 p.z = c.z + (p.z - c.z) * 0.8
                 return p
             if g == "fx_mouth":
-                u = (p.x - c.x) / w
-                p.z -= 0.025 * hh * u * u
+                u = (p.x - c.x) / w   # 口のもとの笑いのカーブを打ち消して、への字ぎみに
+                p.z -= (mo["smile"] + 0.02) * hh * u * u
+                p.x = c.x + (p.x - c.x) * 0.85
                 return p
 
         def sad(g, p, c, w):
             if g.startswith("fx_brow"):
                 return brow_tilt(g, p, c, w, 0.06)
             if g == "fx_mouth":
-                u = (p.x - c.x) / w
-                p.z -= 0.04 * hh * u * u - 0.01 * hh
+                u = (p.x - c.x) / w   # 笑いのカーブを打ち消して、への字に
+                p.z -= (mo["smile"] + 0.04) * hh * u * u - 0.01 * hh
+                p.x = c.x + (p.x - c.x) * 0.8
                 return p
 
         for name, fn in (("blink", blink), ("smile", smile), ("open", open_), ("surprise", surprise),
@@ -856,15 +949,15 @@ class Builder:
         return self.arm, self.body_obj
 
 
-def export(name: str, out_dir: Path) -> Path:
+def export(name: str, out_dir: Path, face: str | None = None, suffix: str = "") -> Path:
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    s = spec_of(name)
+    s = spec_of(name, face)
     arm, body = Builder(s).build()
     bpy.ops.object.select_all(action="DESELECT")
     arm.select_set(True)
     body.select_set(True)
     bpy.context.view_layer.objects.active = arm
-    path = out_dir / f"own_{name}.glb"
+    path = out_dir / f"own_{name}{suffix}.glb"
     bpy.ops.export_scene.gltf(filepath=str(path), export_format="GLB", use_selection=True,
                               export_animations=False, export_morph=True, export_skins=True)
     print(f"[chars] {s['label']} → {path}（頂点 {len(body.data.vertices)}）")
@@ -873,7 +966,8 @@ def export(name: str, out_dir: Path) -> Path:
 
 # ---- 下見の絵 --------------------------------------------------------------------------
 
-def preview(paths: list[Path], out_dir: Path) -> None:
+def preview(paths: list[Path], out_dir: Path, compare: dict | None = None) -> None:
+    """paths の人形を並べた絵。compare = {顔の型: [glb, …]} なら、顔の型ごとに「ふだん・笑顔」を並べた絵だけを書く。"""
     out_dir.mkdir(parents=True, exist_ok=True)
 
     def scene_base(w, h):
@@ -918,6 +1012,23 @@ def preview(paths: list[Path], out_dir: Path) -> None:
                     o.data.shape_keys.key_blocks[k].value = val
         return new
 
+    def lower_arms(arm, angle=1.2):
+        """T ポーズの腕を下ろす（顔の見比べで、となりの人形の腕がかぶらないように）。"""
+        fwd = arm.matrix_world.to_3x3().inverted() @ Vector((0, 1, 0))
+        for side in ("Left", "Right"):
+            pb = arm.pose.bones[f"{side}Arm"]
+            hand = arm.pose.bones[f"{side}Hand"]
+            z0 = (arm.matrix_world @ hand.head).z
+            for a in (angle, -angle):
+                head = pb.head.copy()
+                m0 = pb.matrix.copy()
+                pb.matrix = Matrix.Translation(head) @ Matrix.Rotation(a, 4, fwd) @ Matrix.Translation(-head) @ m0
+                bpy.context.view_layer.update()
+                if (arm.matrix_world @ hand.head).z < z0:
+                    break
+                pb.matrix = m0
+                bpy.context.view_layer.update()
+
     def camera(loc, target, lens=50, ortho=None):
         cd = bpy.data.cameras.new("cam")
         cd.lens = lens
@@ -935,6 +1046,41 @@ def preview(paths: list[Path], out_dir: Path) -> None:
         sc.render.filepath = str(out_dir / fname)
         bpy.ops.render.render(write_still=True)
         print(f"[chars] preview → {sc.render.filepath}")
+
+    if compare:
+        for style, files in compare.items():
+            scene_base(2000, 560)
+            i = 0
+            for f in files:
+                for keys in (None, {"smile": 1}):
+                    load(f, (i - 3.5) * 0.55, keys=keys)
+                    i += 1
+            camera((0, -8, 1.33), (0, 0, 1.33), ortho=4.5)
+            shot(f"compare_{style}.png")
+        # 顔だけを大きく：型ごとに1行（4人のふだんの顔）。頭の高さをそろえ、左に型の名前
+        for row, (style, files) in enumerate(compare.items()):
+            scene_base(2000, 440)
+            for i, f in enumerate(files):
+                new = load(f, -0.75 + i * 0.72)
+                arm = next(o for o in new if o.type == "ARMATURE")
+                bpy.context.view_layer.update()
+                lower_arms(arm)
+                hb = arm.data.bones["Head"]
+                hz = (arm.matrix_world @ ((hb.head_local + hb.tail_local) / 2)).z
+                arm.location.z += 1.5 - hz
+            cu = bpy.data.curves.new("label", "FONT")
+            cu.body = f"{chr(65 + row)}  {FACES[style]['label']}"
+            cu.font = bpy.data.fonts.load(str(REPO / "assets" / "fonts" / "KleeOne-SemiBold.ttf"))
+            cu.size = 0.12
+            cu.align_y = "CENTER"
+            lab = bpy.data.objects.new("label", cu)
+            col().objects.link(lab)
+            lab.location = (-1.82, -0.6, 1.5)
+            lab.rotation_euler = (1.5708, 0, 0)
+            lab.data.materials.append(make_material("label", "#222222", rough=0.8))
+            camera((0, -8, 1.48), (0, 0, 1.48), ortho=3.7)
+            shot(f"heads_{row}_{style}.png")
+        return
 
     xs = [(-1.5 + i) * 1.0 for i in range(len(paths))]
     scene_base(1800, 1000)
@@ -969,11 +1115,19 @@ def main():
     ap.add_argument("--only", default="", help="作る人形（カンマ区切り）。空ならすべて")
     ap.add_argument("--out", default=str(OUT))
     ap.add_argument("--preview", default="", help="並べた絵を書き出すフォルダ")
+    ap.add_argument("--face", default="", help="顔の型（FACES のキー）。SPECS の face より優先")
+    ap.add_argument("--compare", default="", help="見比べる顔の型（カンマ区切り）。own_{name}_{型}.glb を --out に書き、"
+                                                    "--preview に compare_{型}.png を書く")
     a = ap.parse_args(argv)
     names = [n for n in a.only.split(",") if n] or list(SPECS)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    paths = [export(n, out) for n in names]
+    if a.compare:
+        styles = [x for x in a.compare.split(",") if x]
+        files = {st: [export(n, out, st, f"_{st}") for n in names] for st in styles}
+        preview([], Path(a.preview or out), compare=files)
+        return
+    paths = [export(n, out, a.face or None) for n in names]
     if a.preview:
         preview(paths, Path(a.preview))
 

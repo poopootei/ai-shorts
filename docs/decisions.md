@@ -219,6 +219,10 @@
   - IK の pole は4体とも数値で確かめた：ひざは -π/2（前へ）、ひじは左 π・右 0（後ろ・外・下へ）。
 - 表情は形状キー：blink / smile / open / surprise / angry / sad。kit の `expr`（表情を変える）・`blinks`（ときどきまばたき）・`talk`（セリフの口パク）で付ける。
   - glb を読み込むと形状キーがすべて 1 になる（全部の表情が重なる）ので、kit が読み込んだときに 0 に戻す。
+- 顔の型（2026-11-25 追記）：「パッと見てキャッチーなものを」（ユーザー）。5つ作って見比べ、ユーザーが E（点目）を選んだ。
+  - 型は `FACES`：A 黒目だけ、B キラキラ（大きな黒目・光2つ・上まぶたの線）、C 白目と黒目、D 白目とまぶた（ジト目ぎみ）、E 点目（小さな点の目・太いまゆ・大きな笑い口・全員にほお紅）。まゆ・口・ほお紅の大きさは型ごとの倍率で変える。
+  - 見比べ：`make_characters.py -- --out <フォルダ> --compare dot,googly --preview <フォルダ>` で、型ごとの glb と並べた絵（heads_* = 顔の拡大、compare_* = ふだん・笑顔）を書く。書き出す人形の型は BASE の `face`（今は dot）。
+  - 点目は口の笑いのカーブが強いので、angry / sad の形状キーはそのカーブを打ち消してから口を下げる。
 - 使い方：`kit.person("young_man")`。服の色は `colors={"top": …}` で物語ごとに変えられる（材質の名前で `recolor`）。下見の舞台 `scripts/blender/people_check.py`（座る・立つ・手を伸ばす・歩く・表情・Mixamo の動き。ひじ・ひざの向きも数値で出す）。
 - 説明文のクレジット：舞台が Quaternius の人形を使っていれば今までどおり `blender.credit`（「人形：Quaternius（CC0）」）、自前の人形だけなら `blender.credit_own`（「3D（Blender）」）を `--adopt` で書く。
 - Quaternius の2体（casual_man / casual_woman）と、それを使った4本の舞台はそのまま残す。
