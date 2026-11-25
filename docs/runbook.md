@@ -100,7 +100,8 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
   4. 全編：`.venv\Scripts\python scripts\render_3d.py -c <ch> <id>` → `work/<id>/video_3d.mp4`（1本 8〜12 分）。
   5. 採用：`... render_3d.py -c <ch> <id> --adopt` → `qa`。qa は、3D の物語で 3D 版を採用していないと「映像」で NG にする。
 - 静止画で作った物語を 3D に作り直すときも同じ（`--adopt` が前の版を `video_static.mp4` に残す）。
-- 人形は自前の4体（D-029）を使う：`kit.person("young_man")`（ほかに young_woman / old_man / old_woman）。
+- 人形は自前の4体（D-029）を使う：`kit.person("young_man")`（ほかに young_woman / old_man / old_woman）。これが標準で、説明文の「映像：」は `blender.credit`（3D（Blender））になる。
+  - 既存の4本の舞台（20261123-007・008、20261124-002・003）は D-029 より前の Quaternius の人形（`casual_man.glb`）。段取りの手本にはしてよいが、人形はそこから写さない。自前の人形の使い方の手本は `scripts/blender/people_check.py`。
   - 服の色を物語ごとに変える：`kit.person("young_man", "me", colors={"top": (0.1, 0.2, 0.5)})`（材質は skin / hair / brow / top / inner / bottom / shoes / detail）。
   - 表情：`c.expr(F(t), smile=1)`（blink / smile / open / surprise / angry / sad。0 で戻す）、`c.blinks(1, F(終わり))`、セリフの口パク `c.talk(F(t0), F(t1))`。
   - 人形を直す・足す：`scripts/blender/make_characters.py` の SPECS を直して書き出す → `scripts/blender/people_check.py --out <フォルダ>` で座る・立つ・歩く・表情を下見し、ひじ・ひざの向き（POLES の行）を確かめる。

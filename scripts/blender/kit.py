@@ -416,9 +416,14 @@ class Character:
     """glb の人形。読み込んで、身長を合わせ、足元を原点に置く。前は -Y（glTF の +Z）。
 
     動かし方は「行き先」で決める：手・足の行き先の empty を IK で追わせ、胴・首・頭は回す。
+    ふつうは person()（自前の人形）で作る。file と rig を省くと自前の若い男、height を省くと PEOPLE の身長。
     """
 
-    def __init__(self, name: str, file: str, rig: str, height: float):
+    def __init__(self, name: str, file: str = PEOPLE["young_man"][0], rig: str = "own", height: float | None = None):
+        if height is None:
+            height = next((h for f, h in PEOPLE.values() if f == file), None)
+            if height is None:
+                raise ValueError(f"{file} の身長が分かりません。height を指定してください。")
         self.name = name
         self.rig = RIGS[rig]
         before = {o.name for o in bpy.data.objects}

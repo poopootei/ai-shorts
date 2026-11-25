@@ -22,7 +22,7 @@ description: ai-shorts で朗読ショート動画を作る全体の流れ（物
    - `"3d"`：背景画像は選ばない。手順5の `all` が qa の前で止まるので、そのあと下の「3D の舞台」に進む。
 5. **合成**：`py -m ai_shorts -c <ch> all --id <id>`（複数なら id ごと）。止まったらエラーの文面どおりに直す（多いのは「長すぎる」→ 本文を短くしてユーザーに確認、「接続できない」→ エンジン起動）。
    - **3D の舞台**（visual: 3d。runbook 3-3b、D-027・D-028）：
-     1. `scripts/blender/<id>.py` を書く。部品は `scripts/blender/kit.py`（人形・座る・立つ・歩く・手の行き先と向き・物を持つ・文字・家具・光）。既存の舞台（20261124-002 など）を手本にする。人形は自前の4体 `kit.person("young_man" / "young_woman" / "old_man" / "old_woman")` を使い、表情（`expr`・`blinks`・セリフの `talk`）も付ける（D-029、runbook 3-3b）。段取りは timing.json の文の時刻に合わせる。
+     1. `scripts/blender/<id>.py` を書く。部品は `scripts/blender/kit.py`（人形・座る・立つ・歩く・手の行き先と向き・物を持つ・文字・家具・光）。既存の舞台（20261124-002 など）を段取りの手本にする。人形は必ず自前の4体 `kit.person("young_man" / "young_woman" / "old_man" / "old_woman")` を使い（既存の4本は D-029 より前の Quaternius の `casual_man.glb` なので、そこは写さない。自前の人形の使い方の手本は `scripts/blender/people_check.py`）、表情（`expr`・`blinks`・セリフの `talk`）も付ける（D-029、runbook 3-3b）。段取りは timing.json の文の時刻に合わせる。
      2. 下見：`py scripts/render_3d.py -c <ch> <id> --stills <秒,...> --scale 40` → `work/<id>/3d/still_*.png` を自分で見る。人形の向き（背中ばかり写っていないか）、ひじ・ひざの曲がる向き、手が物にめり込んでいないか、小物が手で隠れていないか、文字の大きさ。直してまた下見。
      3. 全編：`py scripts/render_3d.py -c <ch> <id>`（8〜12 分。run_in_background で）→ 書き出したら数秒おきのコマを並べて見る。
      4. `py scripts/render_3d.py -c <ch> <id> --adopt` → `py -m ai_shorts -c <ch> qa --id <id>`。

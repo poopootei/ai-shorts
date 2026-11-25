@@ -100,12 +100,12 @@ QUATERNIUS = ("casual_man.glb", "casual_woman.glb")   # クレジットに名前
 
 
 def credit_for(project, story_id: str) -> str:
-    """説明文の「映像：」。舞台が Quaternius の人形を使っていれば blender.credit、自前の人形だけなら blender.credit_own。"""
+    """説明文の「映像：」。ふつう（自前の人形）は blender.credit。舞台が Quaternius の人形を使っていれば blender.credit_quaternius。"""
     scene = SCENES / f"{story_id}.py"
     text = scene.read_text(encoding="utf-8") if scene.exists() else ""
     if any(f in text for f in QUATERNIUS):
-        return project.get("blender.credit", "3D（Blender）、人形：Quaternius（CC0）")
-    return project.get("blender.credit_own", "3D（Blender）")
+        return project.get("blender.credit_quaternius", "3D（Blender）、人形：Quaternius（CC0）")
+    return project.get("blender.credit", "3D（Blender）")
 
 
 def adopt(project, work: Path, story_id: str) -> Path:

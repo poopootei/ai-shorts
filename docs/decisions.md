@@ -224,8 +224,12 @@
   - 見比べ：`make_characters.py -- --out <フォルダ> --compare dot,googly --preview <フォルダ>` で、型ごとの glb と並べた絵（heads_* = 顔の拡大、compare_* = ふだん・笑顔）を書く。書き出す人形の型は BASE の `face`（今は dot）。
   - 点目は口の笑いのカーブが強いので、angry / sad の形状キーはそのカーブを打ち消してから口を下げる。
 - 使い方：`kit.person("young_man")`。服の色は `colors={"top": …}` で物語ごとに変えられる（材質の名前で `recolor`）。下見の舞台 `scripts/blender/people_check.py`（座る・立つ・手を伸ばす・歩く・表情・Mixamo の動き。ひじ・ひざの向きも数値で出す）。
-- 説明文のクレジット：舞台が Quaternius の人形を使っていれば今までどおり `blender.credit`（「人形：Quaternius（CC0）」）、自前の人形だけなら `blender.credit_own`（「3D（Blender）」）を `--adopt` で書く。
+- 説明文のクレジット：自前の人形だけなら `blender.credit`（「3D（Blender）」）、舞台が Quaternius の人形を使っていれば `blender.credit_quaternius`（「人形：Quaternius（CC0）」）を `--adopt` で書く。
 - Quaternius の2体（casual_man / casual_woman）と、それを使った4本の舞台はそのまま残す。
+- 標準にする（2026-11-26 追記）：「デフォルトでこの 3D モデルを使うように」（ユーザー）。これからの舞台は自前の人形で作る。
+  - kit の `Character` は rig を省くと `own`、height を省くと `PEOPLE` の身長（file を省くと若い男）。ふつうは `kit.person`。
+  - config のクレジットは、`blender.credit` を自前の人形の表記にし、Quaternius の表記は `blender.credit_quaternius` に移した（前は `credit` が Quaternius、`credit_own` が自前）。
+  - Quaternius で作った4本は動画CHECK を通って `upload/` にあるので、作り直さない。
 - 残り：主な動きのテンプレート（うなずく・驚く・指さす・頭をかかえる など、人形を問わず「誰が・いつ・どの動き」で呼べる形）と、使い回せる舞台の部品。見た目はユーザーがスマホで見て決める（下見の絵を見てもらう）。
 
 ## 未決定
