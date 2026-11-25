@@ -38,8 +38,8 @@ comfyui:
   height: 1920
 
 subs:
-  font_file: ../../assets/fonts/NotoSerifJP-Medium.otf
-  font_name: Noto Serif JP Medium  # libass はファミリー名（name ID 1）で探す
+  font_file: ../../assets/fonts/NotoSansJP-Black.otf   # 2026-11-25 ユーザーの希望で Noto Serif JP Medium → Noto Sans JP Black（OFL 1.1）
+  font_name: Noto Sans JP Black  # libass はファミリー名（name ID 1）で探す
   font_size: 92              # 1行10字 × 92px = 920px（左右に余白80pxずつ）。2026-11-20 スマホで小さいとの指摘で 80 → 92
   outline: 6
   max_chars_per_line: 10
@@ -67,7 +67,7 @@ render:
   background_color: "0x14141c"  # img_1.png がないときの背景
   crf: 20
   x264_preset: medium
-  show_credit_overlay: true
+  show_credit_overlay: false   # 画面には声のクレジットを出さない（説明文には出す。2026-11-25 ユーザーの判断）
   credit_font_size: 34
   credit_margin: 40         # 左端からの px
   credit_y_ratio: 0.06      # 上端からの割合

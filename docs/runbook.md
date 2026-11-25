@@ -37,7 +37,7 @@ Claude Code で作業するときは、`.claude/skills/` のスキル（下の�
 | 確認 | `.venv\Scripts\python scripts\tts_status.py` → 全部 OK | – |
 | テスト | `.venv\Scripts\python -m pytest` | – |
 
-- フォント（Noto Serif JP Medium、OFL）は `assets/fonts/` に入っている（git 管理）。
+- フォント（Noto Sans JP Black・Noto Serif JP Medium・Klee One、どれも OFL）は `assets/fonts/` に入っている（git 管理）。
 - つくよみちゃんは COEIROINK に同梱。
 - エンジンのデータは `tools/` のほか、`%APPDATA%\AivisSpeech-Engine`（モデルと BERT、約 1.6GB）にもできる。完全に消すときはそこも消す。
 - VOICEVOX（`tools/voicevox_engine/`）はいまは使っていない（D-011）。

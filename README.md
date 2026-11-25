@@ -61,7 +61,7 @@ posted/{id}.mp4           ← 投稿済みの原本。物語は stories/posted/
 | 音声合成 | COEIROINK（50032）・AivisSpeech Engine（10101） | 声ごとに利用規約とクレジット表記を確認（下の「音声合成エンジン」） |
 | 画像生成 | ComfyUI（localhost:8188） | RTX 3060 Ti（8GB）。商用利用できるモデルのみ使う |
 | 合成 | ffmpeg | 字幕を焼き込むため libass つきのビルド |
-| フォント | Noto Serif JP など（OFL） | `assets/fonts/` に置く |
+| フォント | Noto Sans JP・Noto Serif JP・Klee One（OFL） | `assets/fonts/` に置く |
 | BGM | 自作の WAV | `assets/bgm/`。ルールは [docs/bgm.md](docs/bgm.md) |
 | Python | 3.11 以上 | `pip install -r requirements.txt` |
 

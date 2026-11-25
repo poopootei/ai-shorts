@@ -209,6 +209,12 @@
 - 差し替えた4本（嘘発見器・二人目の僕・思い出の質屋・予約席）にも `"visual": "3d"` を入れた。
 - 手順：runbook 3-3b、make-shorts スキル。
 
+## D-029 2026-11-25 ショートショートの字幕は Noto Sans JP Black にし、画面の声のクレジットをやめる
+- ユーザーの希望で、字幕（本文・hook）のフォントを Noto Serif JP Medium（D-009）から Noto Sans JP Black に変えた。D-009 と同じく notofonts/noto-cjk の SubsetOTF（OFL 1.1）を `assets/fonts/NotoSansJP-Black.otf` に置き、ライセンス文は `assets/fonts/licenses/LICENSE-NotoSansJP.txt`。
+- libass はファミリー名（name ID 1）で探すので、config の font_name は "Noto Sans JP Black"。
+- 左上の声のクレジット（`render.show_credit_overlay`）は出さない。声のクレジットは説明文に出す（qa が検査する）。「物語で学ぶ日本語」（D-025 のころから false）と同じ。
+- 投稿待ち（upload/）の8本をこの設定で作り直した（3D の4本は Blender のコマはそのままで、合成だけやり直した）。
+
 ## 未決定
 - [ ] 新しいチャンネルの内容と名前。候補は docs/channel-ideas.md（数秘術＋物語、コント＋サラリーマンあるある、青空文庫の紹介）。まずはショートだけで、長尺は人気が出てから
 - [ ] コントの台本の形式と書き方の指針（話者・セリフ・表情・間）
