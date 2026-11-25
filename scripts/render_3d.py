@@ -96,7 +96,19 @@ def compose(project, work: Path, out: Path) -> Path:
     return video
 
 
-def adopt(project, work: Path) -> Path:
+QUATERNIUS = ("casual_man.glb", "casual_woman.glb")   # クレジットに名前を出す人形（CC0。assets/3d/characters/SOURCES.md）
+
+
+def credit_for(project, story_id: str) -> str:
+    """説明文の「映像：」。舞台が Quaternius の人形を使っていれば blender.credit、自前の人形だけなら blender.credit_own。"""
+    scene = SCENES / f"{story_id}.py"
+    text = scene.read_text(encoding="utf-8") if scene.exists() else ""
+    if any(f in text for f in QUATERNIUS):
+        return project.get("blender.credit", "3D（Blender）、人形：Quaternius（CC0）")
+    return project.get("blender.credit_own", "3D（Blender）")
+
+
+def adopt(project, work: Path, story_id: str) -> Path:
     """3D 版を本番の video.mp4 にする。静止画の版は video_static.mp4 に残す（一度だけ）。"""
     src = work / "video_3d.mp4"
     if not src.exists():
@@ -106,7 +118,7 @@ def adopt(project, work: Path) -> Path:
         video.replace(static)
         print(f"[3d] 静止画の版 → {static}")
     shutil.copy2(src, video)
-    credit = project.get("blender.credit", "3D（Blender）、人形：Quaternius（CC0）")
+    credit = credit_for(project, story_id)
     (work / "visual.json").write_text(
         json.dumps({"kind": "3d", "credit": credit}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"[3d] 採用 → {video}（続けて qa を実行してください）")
@@ -132,7 +144,7 @@ def main() -> int:
     out = work / "3d"
     try:
         if a.adopt:
-            adopt(project, work)
+            adopt(project, work, a.story_id)
             return 0
         if not a.compose_only:
             blender(project, a.story_id, work, out, a.stills, a.scale, a.blender)

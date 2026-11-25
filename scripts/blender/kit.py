@@ -317,6 +317,22 @@ RIGS = {
         "mixamo_map": "same",
     },
 }
+# 自前の人形（scripts/blender/make_characters.py、own_*.glb）。骨の名前は Mixamo と同じ。
+# pole は 2026-11-25 に4体とも数値で確かめた（scripts/blender/people_check.py）：ひざは -π/2 で前へ、
+# ひじは左 π・右 0 で後ろ・外・下へ曲がる（座ってひざに手、立って手を下げる、の両方）
+RIGS["own"] = dict(RIGS["mixamo"], poles={"leg": {"L": -math.pi / 2, "R": -math.pi / 2},
+                                          "arm": {"L": math.pi, "R": 0.0}})
+
+# 自前の人形の一覧：キー → (ファイル, 身長 m)。kit.person("young_man", "me") で読み込む
+PEOPLE = {
+    "young_man": ("own_young_man.glb", 1.72),
+    "young_woman": ("own_young_woman.glb", 1.60),
+    "old_man": ("own_old_man.glb", 1.66),
+    "old_woman": ("own_old_woman.glb", 1.52),
+}
+
+# 表情（形状キー）。0〜1 で混ぜる。open は口を開ける（しゃべる口パクにも使う）
+EXPRESSIONS = ("blink", "smile", "open", "surprise", "angry", "sad")
 
 
 def _mixamo_map(kind: str, target_bones) -> dict:
@@ -414,6 +430,10 @@ class Character:
         objs = _new_objects(before)
         self.arm = next(o for o in objs if o.type == "ARMATURE")
         self.meshes = [o for o in objs if o.type == "MESH"]
+        for o in self.meshes:   # glb を読むと形状キーがすべて 1 になるので、0（ふだんの顔）に戻す
+            if o.data.shape_keys:
+                for kb in o.data.shape_keys.key_blocks:
+                    kb.value = 0.0
         if self.arm.animation_data:
             self.arm.animation_data.action = None
         for pb in self.arm.pose.bones:
@@ -815,6 +835,61 @@ class Character:
         for i in range(3):
             fill(f'pose.bones["{hips}"].location', i, [v[i] for v in keys_loc])
 
+    # 表情（自前の人形だけ。形状キー） ------------------------------------------------
+    def _keys(self):
+        for o in self.meshes:
+            if o.data.shape_keys:
+                return o.data.shape_keys.key_blocks
+        raise ValueError(f"{self.name} には表情（形状キー）がありません（自前の人形 own_*.glb だけ）")
+
+    def expr(self, frame: int, ease: int = 6, **values):
+        """frame までに表情を変える（ease コマかけて）。例：expr(F(3.0), smile=1)。
+        書かなかった表情はそのまま。ふだんの顔に戻すときは expr(f, smile=0) のように 0 を渡す。"""
+        kb = self._keys()
+        for name, val in values.items():
+            k = kb[name]
+            path = f'key_blocks["{name}"].value'
+            sk = k.id_data
+            hold_before(sk, path, frame, gap=ease)
+            if not fcurves_of(sk) or not any(fc.data_path == path for fc in fcurves_of(sk)):
+                k.value = 0.0
+                k.keyframe_insert("value", frame=max(1, frame - ease))
+            k.value = val
+            k.keyframe_insert("value", frame=frame)
+
+    def blink(self, frame: int):
+        """frame でまばたきを1回（閉じて開くまで約 0.2 秒）。"""
+        kb = self._keys()["blink"]
+        for f, v in ((frame - 2, 0.0), (frame, 1.0), (frame + 1, 1.0), (frame + 4, 0.0)):
+            kb.value = v
+            kb.keyframe_insert("value", frame=max(1, f))
+
+    def blinks(self, f0: int, f1: int, every: float = 3.2, fps: int = 30, seed: int = 0):
+        """f0〜f1 のあいだ、ときどきまばたきする（間隔はだいたい every 秒。人形ごとに seed を変える）。"""
+        import random
+        rnd = random.Random(seed or hash(self.name) & 0xFFFF)
+        f = f0 + int(rnd.uniform(0.3, 1.0) * every * fps)
+        while f < f1 - 5:
+            self.blink(f)
+            f += int(rnd.uniform(0.6, 1.4) * every * fps)
+
+    def talk(self, f0: int, f1: int, rate: float = 7.0, fps: int = 30, amount: float = 0.8):
+        """f0〜f1 のあいだ口をぱくぱくさせる（セリフに合わせる。rate は1秒に開く回数）。"""
+        import random
+        kb = self._keys()["open"]
+        rnd = random.Random(hash((self.name, f0)) & 0xFFFF)
+        step = max(2, int(fps / rate / 2))
+        kb.value = 0.0
+        kb.keyframe_insert("value", frame=max(1, f0 - 1))
+        f, up = f0, True
+        while f < f1:
+            kb.value = amount * rnd.uniform(0.55, 1.0) if up else rnd.uniform(0.0, 0.15)
+            kb.keyframe_insert("value", frame=f)
+            f += step
+            up = not up
+        kb.value = 0.0
+        kb.keyframe_insert("value", frame=f1)
+
     def tint_texture(self, hue_lo: float, hue_hi: float, min_sat: float, color, strength=1.0):
         """画像で色を塗っている材質の、色相が hue_lo〜hue_hi（0〜1）で彩度 min_sat 以上の部分を color にする。
         金髪を黒髪にするときなど（肌・服の色相とぶつからない範囲で使う）。"""
@@ -860,6 +935,16 @@ class Character:
                 if m and m.name.split(".")[0] == material_name:
                     bsdf = m.node_tree.nodes.get("Principled BSDF")
                     bsdf.inputs["Base Color"].default_value = (*color, 1)
+
+
+def person(key: str, name: str | None = None, height: float | None = None, colors: dict | None = None) -> Character:
+    """自前の人形（PEOPLE のキー）を読み込む。colors で服の色を変える（例：{"top": (0.2, 0.3, 0.6)}。リニアの RGB）。
+    材質：skin / hair / brow / top / inner / bottom / shoes / detail / eye / mouth / glass / cheek"""
+    file, h = PEOPLE[key]
+    c = Character(name or key, file, "own", height or h)
+    for mat, color in (colors or {}).items():
+        c.recolor(mat, color)
+    return c
 
 
 def seat(char: Character, loc, facing: float, seat_h=0.46, leg_pole=None, arm_pole=None, arms="ik"):
